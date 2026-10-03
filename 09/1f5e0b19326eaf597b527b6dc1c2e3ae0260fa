@@ -1,0 +1,22 @@
+paper-figures/check_figs.py
+  s_8d39adededdb13::t_991d112c77bac0 1-66
+  s_8d39adededdb13::t_73b3cab12c0621 67-68
+paper-figures/SKILL.md
+  s_8d39adededdb13::t_febdf71948c568 35-36,40,111-112,117-126
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "091f5e0b19326eaf597b527b6dc1c2e3ae0260fa",
+  "prompts": {},
+  "sessions": {
+    "s_8d39adededdb13": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "bd8b0719-d2c9-444e-bc3e-a5af5c56f7fa",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
