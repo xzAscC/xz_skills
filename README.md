@@ -7,7 +7,8 @@ Personal agent skills (the `SKILL.md` format used by Claude Code, opencode, and 
 | [anki-vocab](anki-vocab/SKILL.md) | Turns an English word plus the sentence it came from into a concise Anki card, written through AnkiConnect |
 | [paper-figures](paper-figures/SKILL.md) | House style for paper figures (matplotlib and TikZ): fonts, print sizes, colors, axes, export, checklist |
 | [zhihu-answer-writing](zhihu-answer-writing/SKILL.md) | Drafts or revises Zhihu answers in the user's own analytical first-person voice: verified data, no AI flavor |
-| [zh-controlled-writing](zh-controlled-writing/SKILL.md) | Controlled Simplified Chinese writing: rewrites or reviews docs, PR text, error messages and agent output into natural, non-AI-flavored prose — a Chinese counterpart to ASD-STE100 |
+| [zh-controlled-writing](zh-controlled-writing/SKILL.md) | Rewrites or reviews Chinese technical prose with concise rules and personal style preferences |
+| [en-controlled-writing](en-controlled-writing/SKILL.md) | Writes, rewrites or reviews plain English with strict, default and light editing levels |
 
 ## Install
 
@@ -16,7 +17,7 @@ Clone the repo, then link each skill into the directories your agents read:
 ```bash
 git clone https://github.com/xzAscC/xz_skills.git ~/xz_skills
 mkdir -p ~/.agents/skills ~/.claude/skills
-for skill in anki-vocab paper-figures zhihu-answer-writing zh-controlled-writing; do
+for skill in anki-vocab paper-figures zhihu-answer-writing zh-controlled-writing en-controlled-writing; do
     ln -sT ~/xz_skills/"$skill" ~/.agents/skills/"$skill"
     ln -sT ../../.agents/skills/"$skill" ~/.claude/skills/"$skill"
 done
