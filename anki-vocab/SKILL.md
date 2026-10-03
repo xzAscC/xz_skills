@@ -57,13 +57,17 @@ beyond Python 3:
 python3 <skill-dir>/anki.py list                      # words already in the deck
 python3 <skill-dir>/anki.py add WORD "SENTENCE" "BACK LINE 1" "BACK LINE 2" ...
 python3 <skill-dir>/anki.py update WORD "SENTENCE" "BACK LINE 1" ...   # rewrite an existing card
-python3 <skill-dir>/anki.py delete WORD ...           # delete cards and their audio files
+python3 <skill-dir>/anki.py delete WORD ...           # delete notes, retain shared media
 python3 <skill-dir>/anki.py audio [WORD ...]          # (re)attach audio to existing cards, text untouched
 ```
 
 - The default deck is `Write`; pass `--deck NAME` before the subcommand to use another deck.
 - `add` refuses a word that already exists in the deck; use `update` to rewrite that card.
 - Text is HTML-escaped by the script, so pass plain text.
+- Notes without both `Front` and `Back` are skipped. Duplicate headwords stop the
+  command rather than selecting an arbitrary note; resolve them in Anki first.
+- `delete` retains media because other notes may reference it. Use Anki's Check
+  Media feature to review unused files separately.
 
 ### Audio
 
@@ -72,11 +76,16 @@ python3 <skill-dir>/anki.py audio [WORD ...]          # (re)attach audio to exis
 - Word: Youdao dictionary pronunciation, falling back to TTS.
 - Sentence: TTS via `edge-tts` (free Microsoft Edge neural voices, no API key; install with
   `uv tool install edge-tts`).
-- Files are stored in Anki's media folder as `anki-vocab_<word>.mp3` and
-  `anki-vocab_<word>_sentence.mp3`, and referenced with `[sound:...]` after the word and sentence.
+- Files are stored in Anki's media folder as `anki-vocab_<word>_<audio-hash>.mp3` and
+  `anki-vocab_<word>_sentence_<audio-hash>.mp3`, and referenced with `[sound:...]`
+  after the word and sentence. Content hashes prevent different recordings from
+  overwriting one another across decks.
 - Global options go before the subcommand: `--accent uk` for British voices, `--no-audio` to skip.
-- Audio failures only print a warning; the card is still written. If audio was skipped, tell the
+- Audio download or TTS failures only print a warning; the card is still written.
+  AnkiConnect write failures stop the command. If audio was skipped, tell the
   user and fix it later with `anki.py audio WORD`.
+- `audio` preserves the existing text and HTML, retaining old audio when a
+  replacement is unavailable. It cannot be combined with `--no-audio`.
 
 If AnkiConnect is unreachable (Anki is closed, or the AI has no shell access), do not keep
 retrying. Give the user the card in the format above, plus one tab-separated import

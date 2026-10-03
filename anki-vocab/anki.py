@@ -3,6 +3,7 @@
 
 import argparse
 import base64
+import hashlib
 import html
 import json
 import re
@@ -53,8 +54,12 @@ def tts(text, accent):
         return None
     with tempfile.TemporaryDirectory() as tmp:
         out = Path(tmp) / "a.mp3"
-        run = subprocess.run(cmd + ["--voice", VOICES[accent], "--text", text, "--write-media", str(out)],
-                             capture_output=True, text=True, timeout=60)
+        try:
+            run = subprocess.run(cmd + ["--voice", VOICES[accent], "--text", text, "--write-media", str(out)],
+                                 capture_output=True, text=True, timeout=60)
+        except (subprocess.TimeoutExpired, OSError) as err:
+            print(f"warning: edge-tts failed: {err}; skipping TTS", file=sys.stderr)
+            return None
         if run.returncode or not out.exists() or not out.stat().st_size:
             print(f"warning: edge-tts failed: {run.stderr.strip()[-200:]}", file=sys.stderr)
             return None
@@ -75,28 +80,53 @@ def word_audio(word, accent):
 
 
 def store(name, data):
-    call("storeMediaFile", filename=name, data=base64.b64encode(data).decode())
-    return f" [sound:{name}]"
+    filename = call("storeMediaFile", filename=name, data=base64.b64encode(data).decode())
+    return f" [sound:{filename}]"
 
 
 def notes_by_word(deck):
-    ids = call("findNotes", query=f'deck:"{deck}"')
-    return {headword(n["fields"]["Front"]["value"]): n for n in call("notesInfo", notes=ids)}
+    escaped_deck = deck.replace("\\", "\\\\").replace('"', '\\"')
+    ids = call("findNotes", query=f'deck:"{escaped_deck}"')
+    notes = {}
+    for note in call("notesInfo", notes=ids):
+        if not {"Front", "Back"} <= note["fields"].keys():
+            continue
+        word = headword(note["fields"]["Front"]["value"])
+        if word in notes:
+            sys.exit(f"Multiple notes for '{word}' in deck {deck}; resolve duplicates in Anki first.")
+        notes[word] = note
+    return notes
 
 
 def slug(word):
     return re.sub(r"[^a-z0-9]+", "-", word.lower()).strip("-")
 
 
-def front_field(word, sentence, accent):
-    """Front with word + sentence audio; accent None means no audio."""
+def audio_tags(word, sentence, accent):
     w_snd = s_snd = ""
     if accent:
         if data := word_audio(word, accent):
-            w_snd = store(f"anki-vocab_{slug(word)}.mp3", data)
+            w_snd = store(f"anki-vocab_{slug(word)}_{hashlib.sha256(data).hexdigest()}.mp3", data)
         if sentence and (data := tts(sentence, accent)):
-            s_snd = store(f"anki-vocab_{slug(word)}_sentence.mp3", data)
+            s_snd = store(f"anki-vocab_{slug(word)}_sentence_{hashlib.sha256(data).hexdigest()}.mp3", data)
+    return w_snd, s_snd
+
+
+def front_field(word, sentence, accent):
+    """Front with word + sentence audio; accent None means no audio."""
+    w_snd, s_snd = audio_tags(word, sentence, accent)
     return f"{html.escape(word, quote=False)}{w_snd}<br>{html.escape(sentence, quote=False)}{s_snd}"
+
+
+def refresh_audio(front, accent):
+    """Replace sound tags without rewriting the card's text or HTML."""
+    parts = re.split(r"(<br\s*/?>)", front, maxsplit=1)
+    if len(parts) != 3:
+        raise ValueError("Front must contain a word and sentence separated by <br>")
+    w_snd, s_snd = audio_tags(headword(front), front_sentence(front), accent)
+    word_part = SOUND.sub("", parts[0]) + w_snd if w_snd else parts[0]
+    sentence_part = SOUND.sub("", parts[2]) + s_snd if s_snd else parts[2]
+    return word_part + parts[1] + sentence_part
 
 
 def fields(word, sentence, back_lines, accent):
@@ -111,7 +141,7 @@ def main():
     parser.add_argument("--no-audio", action="store_true", help="do not attach pronunciation audio")
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("list", help="list words in the deck")
-    p = sub.add_parser("delete", help="delete cards and their audio files")
+    p = sub.add_parser("delete", help="delete notes; retain media that other cards may share")
     p.add_argument("words", nargs="+")
     p = sub.add_parser("audio", help="(re)attach audio to existing cards, keeping their text")
     p.add_argument("words", nargs="*", help="words to process (default: every card in the deck)")
@@ -121,6 +151,10 @@ def main():
         p.add_argument("sentence")
         p.add_argument("back", nargs="+", help="back lines, in order")
     args = parser.parse_args()
+    if args.cmd == "audio" and args.no_audio:
+        parser.error("--no-audio cannot be used with audio")
+    if args.cmd in ("add", "update") and not args.word.strip():
+        parser.error("word must not be empty")
 
     existing = notes_by_word(args.deck)
     if args.cmd == "list":
@@ -134,8 +168,6 @@ def main():
                 print(f"'{word}' not found in deck {args.deck}; skipped", file=sys.stderr)
                 continue
             call("deleteNotes", notes=[note["noteId"]])
-            for name in re.findall(r"\[sound:([^\]]+)\]", note["fields"]["Front"]["value"]):
-                call("deleteMediaFile", filename=name)
             print(f"deleted {word} from {args.deck} (note {note['noteId']})")
         return
 
@@ -146,7 +178,11 @@ def main():
             if not note:
                 print(f"'{word}' not found in deck {args.deck}; skipped", file=sys.stderr)
                 continue
-            front = front_field(word.strip().lower(), front_sentence(note["fields"]["Front"]["value"]), accent)
+            try:
+                front = refresh_audio(note["fields"]["Front"]["value"], accent)
+            except ValueError as err:
+                print(f"'{word}': {err}; skipped", file=sys.stderr)
+                continue
             call("updateNoteFields", note={"id": note["noteId"], "fields": {"Front": front}})
             print(f"audio {word}: {front.count('[sound:')} file(s)")
         return
