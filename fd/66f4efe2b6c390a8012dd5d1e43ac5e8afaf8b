@@ -1,0 +1,50 @@
+zh-controlled-writing/SKILL.md
+  s_7b100259079ce6::t_08359d3e9555f5 8,10-11,16,28,31,33,41,46,52,58,65,71,78
+  s_83229909dc5b6f::t_7dbc7070999f28 1-7,9,12-15,17-27,29-30,32,34-40,42-45,47-51,53-57,59-64,66-70,72-77,79-89
+README.md
+  s_83229909dc5b6f::t_57f41f31415502 10
+  s_83229909dc5b6f::t_2180baf10bbe4e 9
+  s_7b100259079ce6::t_08359d3e9555f5 18-22,25-27,30-33
+anki-vocab/SKILL.md
+  s_7b100259079ce6::t_08359d3e9555f5 60,67-70,79-82,84-85,87-88
+anki-vocab/anki.py
+  s_7b100259079ce6::t_08359d3e9555f5 127-129
+  s_7b100259079ce6::t_8c59a5b2d2ed6b 6,57-62,83-84,88-98,105,109,111-117,121-126,130-131,144,154-157,181-184
+  s_7b100259079ce6::t_d1d28c7649f812 185
+paper-figures/check_figs.py
+  s_7b100259079ce6::t_8c59a5b2d2ed6b 8-9,20-30,32,36-37,44-47,49-50,75-79,83-88,94
+zhihu-answer-writing/SKILL.md
+  s_7b100259079ce6::t_08359d3e9555f5 8-55
+  s_83229909dc5b6f::t_a850774064a572 3
+  s_83229909dc5b6f::t_63316bf3ff96b9 1-2
+  s_7b100259079ce6::t_1f45015a4e212b 56-58
+  s_7b100259079ce6::t_b08b8d8d5b3d36 4-7,59-60
+tests/test_helpers.py
+  s_7b100259079ce6::t_6d25d47efe6b29 1-150
+.gitignore
+  s_7b100259079ce6::t_6d25d47efe6b29 1-2
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "fd66f4efe2b6c390a8012dd5d1e43ac5e8afaf8b",
+  "prompts": {},
+  "sessions": {
+    "s_7b100259079ce6": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a10074-f7a5-7a71-9bb8-76a18c52d033",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    },
+    "s_83229909dc5b6f": {
+      "agent_id": {
+        "tool": "pi",
+        "id": "01a0ff40-548f-761c-8915-85a8b09f4308",
+        "model": "glm-5.3"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
