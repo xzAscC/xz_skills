@@ -32,11 +32,12 @@ RC = {
 }
 ```
 
-- TikZ preamble: `\usepackage[T1]{fontenc}`, `\usepackage{sourcesanspro}`, `\usepackage{amsmath}`, `\usepackage[scaled=.98]{newtxsf}`, `\let\mathrm\mathsf`, then `\sffamily` in the document.
+- TikZ preamble: `\usepackage[T1]{fontenc}`, `\usepackage{sourcesanspro}`, `\usepackage{amsmath}`, `\usepackage[scaled=.98]{newtxsf}`, `\let\mathrm\mathsf`, `\SetSymbolFont{operators}{normal}{T1}{SourceSansPro-TLF}{m}{n}` (sans `\dim`, `\log`), then `\sffamily` in the document. Keep it in one shared `.tex` that every TikZ figure `\input`s.
+- Source Sans has tall line metrics: multi-line labels need `linespacing≈0.75` in matplotlib.
 
 ## Size: draw at print size
 
-- `figsize` width = the width the figure occupies on the page. In LaTeX use `width=\linewidth` of that slot with no extra scaling, so a font size in code is the printed size.
+- `figsize` width = the width the figure occupies on the page. In LaTeX include it at natural size (`\includegraphics{fig.pdf}`, no `width=`), so a font size in code is the printed size.
 - Design for the narrowest target venue's `\textwidth` (5.5in for ICLR/NeurIPS-style templates). Tiers:
   - full width: 5.5in
   - half width (minipage or wrapfigure): 2.7in
@@ -107,9 +108,19 @@ Never below 6pt, never above the caption size (9pt). Crowded full-width multi-pa
 
 ## Checklist (run for every figure)
 
-1. `pdffonts fig.pdf`: only Source Sans (plus math fallbacks), all embedded.
-2. `pdfinfo fig.pdf`: page width equals the tier width; the LaTeX include adds no scaling.
+1. `python3 <skill>/check_figs.py figs/` checks every PDF: Source Sans present, only math fallbacks besides it, all fonts embedded, width within `--textwidth` (default 5.5). Fix every `FAIL`.
+2. Each figure's width equals its LaTeX slot (fraction × textwidth); the include has no `width=`.
 3. Compile the paper and view the page: all text 6–9pt and in proportion to the body text.
 4. Colors and markers match the project table; series remain distinguishable in grayscale.
 5. Data loads from results files; no hard-coded values.
 6. Caption states uncertainty type, sample count, and any axis breaks.
+
+## Feedback protocol
+
+When the user says a figure looks wrong ("太挤了", "not consistent"), look at the current render first.
+
+1. Name the defect in one sentence: which figure and panel, and whether it is scale, ticks, density, alignment, type, color, or labels.
+2. Fix the boundary: say what changes and what must stay (other panels, shared tokens, the other figures using the same style).
+3. Make the smallest change that fixes it, and name the exact parameter and value (e.g. `ylim=(1e-3, 1e2)`), never "I'll adjust it".
+4. If the request conflicts with the data (e.g. an axis range that would drop points), say so with the numbers before changing anything.
+5. **Escalate after two rounds.** If the same element is still not approved after two adjustments, stop nudging: render 2–3 labeled variants (A/B/C) of that panel side by side, changing only the property in question, and let the user pick. Then apply the pick everywhere it applies.
