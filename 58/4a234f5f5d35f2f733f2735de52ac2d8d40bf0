@@ -1,0 +1,19 @@
+zhihu-answer-writing/SKILL.md
+  s_159a1bea8405e0::t_65a51dd065a10a 10-22,33,50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "584a234f5f5d35f2f733f2735de52ac2d8d40bf0",
+  "prompts": {},
+  "sessions": {
+    "s_159a1bea8405e0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "54d1cce7-2784-4adb-81ae-e42aee24988f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
