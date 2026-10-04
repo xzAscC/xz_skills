@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import uuid
 import zipfile
 
 STYLE = pathlib.Path(__file__).with_name("style.css")
@@ -86,10 +87,18 @@ def render(chapters, illus=None, illus_title="插图"):
     return "<html><body>\n" + "\n".join(body) + "\n</body></html>\n", kept, dropped
 
 
+def book_id(a):
+    """书的唯一标识。pandoc 默认每次随机生成（UUID v4），重新生成后阅读器会当成另一本书；
+    这里用 UUID v5 从「作者/书名」算出来，同一本书无论生成多少次都相同。--id 可直接指定（如 ISBN）。"""
+    if a.id:
+        return a.id
+    return "urn:uuid:" + str(uuid.uuid5(uuid.NAMESPACE_URL, f"epub-making:{a.author}/{a.title}"))
+
+
 def metadata(a):
     # YAML 兼容 JSON 字符串，用 json.dumps 省去转义问题
     q = json.dumps
-    lines = [f"title: {q(a.title)}", f"lang: {q(a.lang)}", "creator:"]
+    lines = [f"title: {q(a.title)}", f"lang: {q(a.lang)}", f"identifier: {q(book_id(a))}", "creator:"]
     lines.append(f"  - role: author\n    text: {q(a.author)}")
     if a.illustrator:
         lines.append(f"  - role: illustrator\n    text: {q(a.illustrator)}")
@@ -141,6 +150,7 @@ def main(argv=None):
     p.add_argument("--lang", default="zh-CN")
     p.add_argument("--subject")
     p.add_argument("--description")
+    p.add_argument("--id", help="书的唯一标识（如 urn:isbn:…）；默认由作者和书名算出固定的 UUID")
     p.add_argument("--cover")
     p.add_argument("--illus", help="插图目录，填进名为 --illus-title 的空节")
     p.add_argument("--illus-title", default="插图")

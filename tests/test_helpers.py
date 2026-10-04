@@ -246,3 +246,11 @@ class EpubTests(unittest.TestCase):
             self.assertEqual(get.call_count, 1)
             self.assertEqual(Path(d, "001.jpg").read_bytes(), b"old")
             self.assertEqual(Path(d, "002.jpg").read_bytes(), b"new")
+
+    def test_book_id_is_stable_and_overridable(self):
+        from types import SimpleNamespace
+        a = SimpleNamespace(id=None, author="作者", title="书名1")
+        self.assertEqual(epub.book_id(a), epub.book_id(SimpleNamespace(**vars(a))))
+        self.assertTrue(epub.book_id(a).startswith("urn:uuid:"))
+        self.assertNotEqual(epub.book_id(a), epub.book_id(SimpleNamespace(id=None, author="作者", title="书名2")))
+        self.assertEqual(epub.book_id(SimpleNamespace(id="urn:isbn:1", author="", title="")), "urn:isbn:1")
