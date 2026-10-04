@@ -23,6 +23,7 @@ def load(name, path):
 
 anki = load("anki", "anki-vocab/anki.py")
 figs = load("figs", "paper-figures/check_figs.py")
+xcount = load("xcount", "x-post-writing/count.py")
 
 
 def note(nid, front):
@@ -148,3 +149,23 @@ class FigureTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class XCountTests(unittest.TestCase):
+    def test_cjk_emoji_and_url_weights(self):
+        # 4 CJK x2, thread emoji 2, ZWJ family 2, " Node.js " 9, URL 23, "." 1
+        self.assertEqual(xcount.weight("中文测试🧵👨\u200d👩\u200d👧 Node.js https://example.com/a."), 45)
+
+    def test_bare_domain_counts_as_url(self):
+        self.assertEqual(xcount.weight("matduggan.com/what-does-my-dream-os-ui-look-like/"), 23)
+
+    def test_split_on_numbered_lines(self):
+        self.assertEqual(xcount.split_posts("1/\na\n\n2/\nb\n"), ["\na\n\n", "\nb\n"])
+        self.assertEqual(xcount.split_posts("one post"), ["one post"])
+
+    def test_over_limit_exit_code(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".md", delete=False) as f:
+            f.write("1/\n" + "a" * 281 + "\n2/\nshort\n")
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(xcount.main([f.name]), 1)
+        self.assertIn("OVER", out.getvalue())
