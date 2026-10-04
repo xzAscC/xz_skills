@@ -1,0 +1,19 @@
+epub-making/SKILL.md
+  s_119f332a6ba5f4::t_7a82bd25bf1079 60-76
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "14312d467fbf2a4efa7079eac348b7de9d3810c8",
+  "prompts": {},
+  "sessions": {
+    "s_119f332a6ba5f4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6b5394c6-fef5-4ac8-81c3-7517ed5f061c",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
