@@ -1,0 +1,39 @@
+epub-making/cover.py
+  s_119f332a6ba5f4::t_50243ff5bd5126 1-73
+epub-making/check_toc.py
+  s_119f332a6ba5f4::t_324766b2baec2c 1-53
+epub-making/sources/wenku8.md
+  s_119f332a6ba5f4::t_52d1c367586af4 1-42
+epub-making/sources/wenku8.py
+  s_119f332a6ba5f4::t_370f4c93c938af 1-78
+epub-making/build.py
+  s_119f332a6ba5f4::t_c684e58574df58 1-44,47-187
+  s_119f332a6ba5f4::t_d704c900c62d1b 45-46
+epub-making/SKILL.md
+  s_119f332a6ba5f4::t_410c25ed5294d9 1-65
+epub-making/fetch.py
+  s_119f332a6ba5f4::t_8e18c340ff641f 109-116
+  s_119f332a6ba5f4::t_4dc7c60ae04ddc 1-108,117-124
+README.md
+  s_119f332a6ba5f4::t_42fcca6acb7d25 13,22,35
+epub-making/style.css
+  s_119f332a6ba5f4::t_d7a128f382cfdf 1-5
+tests/test_helpers.py
+  s_119f332a6ba5f4::t_5a55daf7f1fe1d 172-248
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6cb16a4a8cf9594969e2d5de6ada7084ab325df7",
+  "prompts": {},
+  "sessions": {
+    "s_119f332a6ba5f4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6b5394c6-fef5-4ac8-81c3-7517ed5f061c",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
