@@ -1,6 +1,6 @@
 ---
 name: zhihu-answer-writing
-description: "Draft or revise Zhihu (知乎) answers in the user's analytical first-person voice, preserving their views and real experiences and checking research claims."
+description: "Draft or revise Zhihu (知乎) answers in the user's analytical first-person voice, preserving their views and real experiences and checking research claims, then archive the published answer in the JD repo. Use when the user wants to write or revise a 知乎回答, or record an answer they published on Zhihu."
 ---
 
 # 知乎回答写作
@@ -48,3 +48,23 @@ description: "Draft or revise Zhihu (知乎) answers in the user's analytical fi
 ## 交付
 
 完整回答默认约 900–1700 字，按题目和用户要求调整。头脑风暴轮只交提纲；正式写作轮直接交草稿及确有需要的【待补】或【待核实】项；局部改写只交所改部分。草稿供用户审阅，不替用户发布。
+
+## 存档
+
+用户发布后，按截图、回答链接或用户给出的**实际发布的文字**逐字存档，不按草稿存。存到 JD 仓库（`~/JD`）：
+
+1. 文件：`11 Social/11.02 Zhihu/<YYYY-MM-DD> <问题标题>.md`。格式：
+   ```markdown
+   # <YYYY-MM-DD> <问题标题>
+
+   - Question: [问题标题](问题链接)
+   - Answer: [回答链接](回答链接)
+   - Posted: <YYYY-MM-DD>
+
+   ## Answer
+
+   <逐字正文，含文末来源>
+   ```
+2. 在 `11 Social/11.02 Zhihu/README.md` 里加一行：链接 + 一句话说明。
+3. 当天日记（`00 Periodic/<YYYY>/<MM>/W*/<YYYY-MM-DD>-<Ddd>.md`）里有对应任务就勾掉，并用 `[[文件名]]` 链到存档。
+4. 按 JD 的 `Agents.md` 用 git 提交。

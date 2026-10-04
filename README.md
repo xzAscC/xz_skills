@@ -6,7 +6,7 @@ Personal agent skills (the `SKILL.md` format used by Claude Code, opencode, and 
 | --- | --- |
 | [anki-vocab](anki-vocab/SKILL.md) | Turns an English word plus the sentence it came from into a concise Anki card, written through AnkiConnect |
 | [paper-figures](paper-figures/SKILL.md) | House style for paper figures (matplotlib and TikZ): fonts, print sizes, colors, axes, export, checklist |
-| [zhihu-answer-writing](zhihu-answer-writing/SKILL.md) | Drafts or revises Zhihu answers in the user's own analytical first-person voice: verified data, no AI flavor |
+| [zhihu-answer-writing](zhihu-answer-writing/SKILL.md) | Drafts or revises Zhihu answers in the user's own analytical first-person voice: verified data, no AI flavor; archives what was posted |
 | [zh-controlled-writing](zh-controlled-writing/SKILL.md) | Rewrites or reviews Chinese technical prose with concise rules and personal style preferences |
 | [en-controlled-writing](en-controlled-writing/SKILL.md) | Writes, rewrites or reviews plain English with strict, default and light editing levels |
 | [x-post-writing](x-post-writing/SKILL.md) | Drafts English X posts and threads in the user's voice, checks weighted length, and archives what was posted |
