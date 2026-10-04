@@ -1,0 +1,25 @@
+README.md
+  s_159a1bea8405e0::t_de58ad449faafc 12,21
+tests/test_helpers.py
+  s_159a1bea8405e0::t_429ed98d2ae260 26,152-171
+x-post-writing/SKILL.md
+  s_159a1bea8405e0::t_b2c43c221828cb 1-59
+x-post-writing/count.py
+  s_159a1bea8405e0::t_fae27a8e2e4c95 1-86
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7e9e8874f59a5c5f81a9e214735428c73ad7ff3f",
+  "prompts": {},
+  "sessions": {
+    "s_159a1bea8405e0": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "54d1cce7-2784-4adb-81ae-e42aee24988f",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
