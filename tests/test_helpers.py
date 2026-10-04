@@ -169,3 +169,80 @@ class XCountTests(unittest.TestCase):
         with contextlib.redirect_stdout(io.StringIO()) as out:
             self.assertEqual(xcount.main([f.name]), 1)
         self.assertIn("OVER", out.getvalue())
+
+
+epub = load("epub_build", "epub-making/build.py")
+toc = load("epub_toc", "epub-making/check_toc.py")
+cover = load("epub_cover", "epub-making/cover.py")
+fetch = load("epub_fetch", "epub-making/fetch.py")
+wenku8 = load("wenku8", "epub-making/sources/wenku8.py")
+
+
+class EpubTests(unittest.TestCase):
+    TXT = ("★轻小说文库(Www.WenKu8.com)★\r\n\r\n  第一卷 序  \r\n    正文一。\r\n    ***\r\n"
+           "  第一卷 插图  \r\n        \r\n  第一卷 后记  \r\n    正文二。\r\n ◆◇◆◇ \r\n").encode("gb18030")
+
+    def test_gb18030_split_drops_ads_and_keeps_scene_breaks(self):
+        chapters = epub.split(epub.decode(self.TXT), "第一卷")
+        self.assertEqual(chapters, [("序", ["正文一。", "***"]), ("插图", []), ("后记", ["正文二。"])])
+
+    def test_other_prefix_and_utf8(self):
+        text = epub.decode("  SSS短篇集 第一篇 特典\n    内容\n".encode())
+        self.assertEqual(epub.split(text, "SSS短篇集"), [("第一篇 特典", ["内容"])])
+
+    def test_empty_sections_dropped_or_filled_with_deduped_images(self):
+        chapters = epub.split(epub.decode(self.TXT), "第一卷")
+        _, kept, dropped = epub.render(chapters)
+        self.assertEqual((kept, dropped), (["序", "后记"], ["插图"]))
+        with tempfile.TemporaryDirectory() as d:
+            for name, data in [("001.jpg", b"a"), ("002.jpg", b"a"), ("003.jpg", b"b"), ("notes.txt", b"x")]:
+                Path(d, name).write_bytes(data)
+            doc, kept, dropped = epub.render(chapters, d)
+        self.assertEqual((kept, dropped), (["序", "插图", "后记"], []))
+        self.assertEqual(doc.count("<img "), 2)
+
+    def test_calibre_series_added_and_mimetype_stays_first_uncompressed(self):
+        import zipfile
+        with tempfile.TemporaryDirectory() as d:
+            path = Path(d, "b.epub")
+            with zipfile.ZipFile(path, "w") as z:
+                z.writestr(zipfile.ZipInfo("mimetype"), "application/epub+zip")
+                z.writestr("EPUB/content.opf", "<package><metadata></metadata></package>", zipfile.ZIP_DEFLATED)
+            epub.add_calibre_series(path, "书&名", "7.5")
+            with zipfile.ZipFile(path) as z:
+                first = z.infolist()[0]
+                opf = z.read("EPUB/content.opf").decode()
+        self.assertEqual((first.filename, first.compress_type), ("mimetype", zipfile.ZIP_STORED))
+        self.assertIn('name="calibre:series" content="书&amp;名"', opf)
+        self.assertIn('content="7.5"', opf)
+
+    def test_toc_compare(self):
+        ref = ["序", "第一章", "插图", "后记"]
+        self.assertEqual(toc.compare(ref, ["序", "第一章 ", "后记"], ["插图"]), ([], [], True))
+        self.assertEqual(toc.compare(ref, ["第一章", "序", "多余"]), (["插图", "后记"], ["多余"], False))
+
+    def test_cover_finds_front_left_of_spine(self):
+        import numpy as np
+        img = np.full((100, 300), 255, dtype=np.uint8)
+        img[:, 40:110] = 60    # 封面
+        img[:, 125:260] = 90   # 封底
+        self.assertEqual(cover.find_front(img, ratio=0.7, side="left"), (40, 110))
+
+    def test_wenku8_index_parse(self):
+        page = ('<table><tr><td class=vcss colspan=4 vid=11>第一卷</td></tr><tr>'
+                '<td class=ccss><a href=https://x/1.htm>序</a></td>'
+                '<td class=ccss><a href=https://x/2.htm>插图</a></td><td class=ccss>&nbsp;</td></tr></table>')
+        self.assertEqual(wenku8.parse(page),
+                         [{"name": "第一卷", "vid": "11", "chapters": ["序", "插图"], "illus": "https://x/2.htm"}])
+
+    def test_fetch_rejects_short_delay_and_skips_existing(self):
+        with self.assertRaises(SystemExit):
+            fetch.main(["--urls", "x", "-d", "y", "--delay", "1"])
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "001.jpg").write_bytes(b"old")
+            with patch.object(fetch, "get", return_value=b"new") as get, \
+                 contextlib.redirect_stdout(io.StringIO()):
+                fetch.download_all(["https://a/1.jpg", "https://a/2.jpg?x=1"], d)
+            self.assertEqual(get.call_count, 1)
+            self.assertEqual(Path(d, "001.jpg").read_bytes(), b"old")
+            self.assertEqual(Path(d, "002.jpg").read_bytes(), b"new")
