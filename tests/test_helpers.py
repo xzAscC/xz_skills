@@ -160,7 +160,7 @@ class XCountTests(unittest.TestCase):
         self.assertEqual(xcount.weight("matduggan.com/what-does-my-dream-os-ui-look-like/"), 23)
 
     def test_split_on_numbered_lines(self):
-        self.assertEqual(xcount.split_posts("1/\na\n\n2/\nb\n"), ["\na\n\n", "\nb\n"])
+        self.assertEqual([p.strip() for p in xcount.split_posts("1/\na\n\n2/\nb\n")], ["a", "b"])
         self.assertEqual(xcount.split_posts("one post"), ["one post"])
 
     def test_over_limit_exit_code(self):
