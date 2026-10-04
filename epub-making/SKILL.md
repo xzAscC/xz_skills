@@ -57,6 +57,23 @@ python3 $S/cover.py img/2/001.jpg -o cover2.jpg --preview cover2-preview.jpg
 - 目录里写一个 `README.md`：书名、作者、译本、来源链接、卷数、封面插图状态。在 `31.01 TODO/README.md` 加一行索引。
 - `*.epub` 走 Git LFS（JD 的 `.gitattributes` 已配置）。按 JD 的 `Agents.md` 提交。
 
+## 放进 Kindle（USB）
+
+Kindle 不读 USB 拷进去的 EPUB（只有 Send to Kindle 会在云端转换），USB 要先转 AZW3。
+
+1. 先列出设备上已有的书给用户看（`documents/`，购买的书在 `documents/Downloads/`），删什么由用户定。购买的书删掉的只是下载副本，可从云端重下。
+2. 转 AZW3，并把 ASIN 固定成 epub 的 UUID（重拷新版时阅读进度不丢）。calibre 会先塞一个随机 uuid，`ebook-meta --identifier` 改不动 AZW3 的 ASIN，要在转换时用 `--read-metadata-from-opf` 指定：
+   ```bash
+   # m.opf 里只放 <dc:identifier opf:scheme="uuid" id="uuid_id">UUID</dc:identifier>（再加 subject/description，否则会丢）
+   ebook-convert book.epub book.azw3 --read-metadata-from-opf m.opf
+   ebook-meta book.azw3 | grep Identifiers   # 应为 mobi-asin:UUID
+   ```
+3. 一个系列一个文件夹：`documents/<系列名>/`。
+4. 封面缩略图：联网后 Kindle 会去亚马逊找侧载书的封面，找不到就变空白。预先放 `system/thumbnails/thumbnail_<ASIN>_EBOK_portrait.jpg`（`ebook-meta --get-cover` 取出，缩到高 330）。
+5. 只删用户数据和别的系统留下的垃圾（`.Spotlight-V100`、`.fseventsd`、`System Volume Information`、`._*`、`*.calibre`、`amazon-cover-bug`）；`system/`、`audible/`、`voice/`、`fonts/` 等固件目录不动。
+6. `udisksctl unmount -b /dev/sdX && udisksctl power-off -b /dev/sdX` 安全弹出，Kindle 才会开始索引。
+7. 设备显示 0 字节时，是 Kindle 没进 USB 驱动器模式：唤醒或重插。
+
 ## 常见坑
 
 - 用 HTML 作为 pandoc 的输入，不要用 Markdown：正文里的 `*`、`>`、`1.` 会被当成格式。
