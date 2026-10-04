@@ -1,0 +1,23 @@
+epub-making/SKILL.md
+  s_119f332a6ba5f4::t_f8dfa62f206ee1 64
+epub-making/cover.py
+  s_119f332a6ba5f4::t_bf20cd9ef01181 4,7-11,26-62,67-74,77,92,101-104
+epub-making/sources/wenku8.md
+  s_119f332a6ba5f4::t_763120b94b0854 38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "7d5489b732e85aff445346334bbb031bacfdc8fa",
+  "prompts": {},
+  "sessions": {
+    "s_119f332a6ba5f4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6b5394c6-fef5-4ac8-81c3-7517ed5f061c",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
