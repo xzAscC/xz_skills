@@ -61,5 +61,5 @@ python3 $S/cover.py img/2/001.jpg -o cover2.jpg --preview cover2-preview.jpg
 
 - 用 HTML 作为 pandoc 的输入，不要用 Markdown：正文里的 `*`、`>`、`1.` 会被当成格式。
 - pandoc 报 `Could not load translations for zh-CN` 是无害警告，`build.py` 已过滤。
-- 图片站点常把同一张图列两次；只按文件名去重不够，要按内容。
+- 图片站点常把同一张图列两次；只按文件名去重不够，要按内容。去重只删完全相同的文件；同一张图有彩色和黑白两个版本时，删黑白的、留彩色的。正文的黑白插画不是副本，不要删。
 - 合并成一本还是一卷一本：默认一卷一本（阅读器按卷记进度、书架按系列排序），用户要合订本时再合。

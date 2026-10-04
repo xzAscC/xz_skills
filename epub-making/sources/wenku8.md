@@ -35,7 +35,7 @@ https://dl.wenku8.com/packtxt.php?aid=<aid>&vid=<vid>&charset=gbk
   python3 fetch.py --page <插图页> --match 'https://pic[^"]+\.(?:jpg|jpeg|png|webp)' \
       --encoding gb18030 --referer https://www.wenku8.net/ -d img/<卷>
   ```
-- **每张图列了两次**（md5 相同）；`build.py --illus` 会按内容去重。
+- **每张图列了两次**（md5 相同）；`build.py --illus` 会按内容去重。黑白图是正文插画，和彩页是不同的图，不是副本，要保留。
 - 第一张是封面相关的图：有的卷是竖版封面，直接用；有的卷是**书衣展开图**（折口 | 封面 | 书脊 | 封底 | 折口），用 `cover.py` 裁出封面（台版直排，封面在书脊左边，`--side left`）。
 - 去掉书腰的变体封面（同一张插画，书名在底部）不是正式封面，不要拿来当封面。
 - 一个插图页约 40 张、两次请求间隔 2 秒，下载一卷要 1–2 分钟；整套书先报总数和耗时。
