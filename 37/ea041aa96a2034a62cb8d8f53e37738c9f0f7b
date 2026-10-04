@@ -1,0 +1,21 @@
+epub-making/build.py
+  s_119f332a6ba5f4::t_2318d92a983a61 23,90-97,101,153
+tests/test_helpers.py
+  s_119f332a6ba5f4::t_00d71bd48e5db6 249-256
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "37ea041aa96a2034a62cb8d8f53e37738c9f0f7b",
+  "prompts": {},
+  "sessions": {
+    "s_119f332a6ba5f4": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6b5394c6-fef5-4ac8-81c3-7517ed5f061c",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
