@@ -1,0 +1,21 @@
+osc-run/SKILL.md
+  s_e8690c361d7781::t_ab42dc76690383 1-55
+README.md
+  s_e8690c361d7781::t_7d5500873c795c 14,23
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ebfea5dd05d721269b8eab00302dd33a8f6cc1e5",
+  "prompts": {},
+  "sessions": {
+    "s_e8690c361d7781": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "a7de4fc7-387b-4599-9e0c-8d2614128e2b",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
