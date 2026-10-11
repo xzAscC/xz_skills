@@ -1,0 +1,24 @@
+git-workflow/SKILL.md
+  s_b8d10da51ea753::t_45ed2cd87d1fd5 1-121
+git-workflow/branches.md
+  s_b8d10da51ea753::t_0fc46c183c8a14 24-27
+  s_b8d10da51ea753::t_886a349a288cac 1-23,28-70
+README.md
+  s_b8d10da51ea753::t_b1a664fddf6f16 16,25
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "d2d9731d72e92fe973acae206bfc827598445874",
+  "prompts": {},
+  "sessions": {
+    "s_b8d10da51ea753": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "3259ae42-f586-46db-a8e7-0f6c1c81cf4c",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
