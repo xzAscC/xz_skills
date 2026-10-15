@@ -1,0 +1,12 @@
+/* 31.15 Thriller & Suspense：惊悚悬疑。白底黑字、暗红强调，思源宋体；章首一道粗短红线。 */
+:root {
+  --ornament: linear-gradient(var(--accent), var(--accent)) center / 2.2em 3px no-repeat;
+  --ornament-height: 3px;
+  --scene-break: "■";
+}
+@media (prefers-color-scheme: light) {
+  :root { --paper: #fafafa; --ink: #1e1e1e; --heading: #1e1e1e; --accent: #8b1e1e; --rule: #b9b9b9; }
+}
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #161616; --accent: #d0605a; }
+}

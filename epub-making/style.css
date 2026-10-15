@@ -1,5 +1,139 @@
-body { line-height: 1.7; text-align: justify; }
-p { text-indent: 2em; margin: 0 0 0.4em 0; }
-h1 { text-align: center; margin: 2em 0 1.5em 0; font-size: 1.3em; line-height: 1.4; }
-figure, .illus { margin: 0; padding: 0; text-align: center; page-break-inside: avoid; }
-img { max-width: 100%; max-height: 100vh; }
+/*
+  基础样式：所有书都用，管语言的排版规则。颜色、字体、装饰由种类样式（categories/31.NN.css）
+  和书的主题（themes/<系列名>/theme.css）通过下面的变量覆盖，顺序是 基础 → 种类 → 主题。
+  覆盖时浅色值写在 @media (prefers-color-scheme: light) 里，深色值写在 dark 里，
+  否则浅色的值会在深色模式下也生效。
+
+  中文依据 W3C《中文排版需求》clreq（https://www.w3.org/TR/clreq/）：
+    段首缩进两个汉字，段间不空行；行距比正文字号宽松；两端对齐。
+  英文依据 Standard Ebooks Manual of Style（https://standardebooks.org/manual）：
+    首行缩进 1em，标题和场景分隔后的第一段不缩进；两端对齐，开连字符断词。
+  "Book Serif"、"Book Kai" 是 restyle.py 嵌入的子集字体（思源宋体、霞鹜文楷，都是 OFL）；
+  没嵌入时（如 build.py 直接生成的书）退回系统字体。
+
+  calibre ebook-viewer 会把 html、body 的背景设成透明、文字颜色设成阅读器配色，
+  所以底色用一层背景图铺，文字颜色加 !important。
+*/
+
+:root {
+  --paper: #fdfbf7;
+  --ink: #26231f;
+  --heading: #26231f;
+  --accent: #6b6258;
+  --rule: #c9c1b4;
+  --body-font: "Book Serif";
+  --heading-font: "Book Serif";
+  --ornament: none;
+  --ornament-height: 0;
+  --scene-break: "*　*　*";
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #1d1b19;
+    --ink: #ddd7cc;
+    --heading: #ebe4d6;
+    --accent: #b3a898;
+    --rule: #5a534a;
+  }
+}
+
+html {
+  background-image: linear-gradient(var(--paper), var(--paper));
+  background-attachment: fixed;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--body-font), "Noto Serif CJK SC", serif;
+  color: var(--ink) !important;
+  line-height: 1.85;
+  text-align: justify;
+}
+
+p {
+  margin: 0;
+  text-indent: 2em;
+}
+
+/* 章节标题 */
+h1, h2, h3 {
+  margin: 2.5em 0 1.6em 0;
+  text-indent: 0;
+  text-align: center;
+  font-family: var(--heading-font), serif;
+  font-size: 1.4em;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.15em;
+  color: var(--heading);
+  page-break-after: avoid;
+}
+
+/* 章首纹样：种类和主题设 --ornament（background 简写）和 --ornament-height */
+:is(h1, h2, h3):not(:has(> img))::after {
+  content: "";
+  display: block;
+  height: var(--ornament-height);
+  margin-top: 0.6em;
+  background: var(--ornament);
+}
+
+/* 短篇集里每篇的小标题 */
+h4 {
+  margin: 2em 0 1.5em 0;
+  text-indent: 0;
+  text-align: center;
+  font-family: var(--heading-font), serif;
+  font-size: 1.15em;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  page-break-after: avoid;
+}
+
+/* 只包着一张图的标题（封面、章首插图）不加标题的留白和纹样 */
+:is(h1, h2, h3, h4):has(> img) {
+  margin: 0;
+  letter-spacing: 0;
+}
+
+/* 插图 */
+figure, .illus {
+  margin: 0;
+  padding: 0;
+  text-align: center;
+  page-break-inside: avoid;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* 场景分隔 */
+hr {
+  margin: 1.2em 0;
+  border: 0;
+  text-align: center;
+  color: var(--accent);
+}
+
+hr::after {
+  content: var(--scene-break);
+}
+
+/* 英文 */
+:lang(en) p {
+  text-indent: 1em;
+  hyphens: auto;
+}
+
+:lang(en) :is(h1, h2, h3, h4, hr) + p {
+  text-indent: 0;
+}
+
+:lang(en) :is(h1, h2, h3) {
+  letter-spacing: 0.05em;
+}

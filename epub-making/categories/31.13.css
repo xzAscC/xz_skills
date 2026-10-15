@@ -1,0 +1,12 @@
+/* 31.13 Crime & Mystery：推理。冷灰白底、墨蓝标题，思源宋体；章首双线中间一个放大镜似的圆。 */
+:root {
+  --ornament: url(mystery-rule.svg) center / contain no-repeat;
+  --ornament-height: 1.1em;
+  --scene-break: "◇";
+}
+@media (prefers-color-scheme: light) {
+  :root { --paper: #f5f6f7; --ink: #23272b; --heading: #2c3e57; --accent: #4d6380; --rule: #a7b0bb; }
+}
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #191b1e; --heading: #a9bdd6; --accent: #8fa3bd; }
+}

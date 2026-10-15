@@ -1,0 +1,73 @@
+/*
+  主题：狼与香辛料，叠在 31.19 Fantasy 上。中世纪行商的故事，赫萝是掌管麦子丰收的狼神。
+  浅色：羊皮纸底、深棕字；深色：夜里篝火旁的暖棕底、米色字。
+  装饰都是麦金色：书边双线加四角麦穗，章首标题下一道麦穗分隔。
+*/
+
+:root {
+  --ornament: url(wheat-rule.svg) center / contain no-repeat;
+  --ornament-height: 1.3em;
+}
+
+@media (prefers-color-scheme: light) {
+  :root { --paper: #f4ead5; --ink: #3b2d20; --heading: #5a3e1f; --accent: #8a6430; --rule: #b8955a; }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #1f1913; --ink: #e2d6c2; --heading: #d8b46a; --accent: #c9a45c; --rule: #8f7442; }
+}
+
+/* 在 Fantasy 的书边双线上加四角麦穗；角花 SVG 里的双线和这两道线对齐 */
+html {
+  background-image:
+    url(corner-tl.svg), url(corner-tr.svg), url(corner-bl.svg), url(corner-br.svg),
+    linear-gradient(var(--rule), var(--rule)), linear-gradient(var(--rule), var(--rule)),
+    linear-gradient(var(--rule), var(--rule)), linear-gradient(var(--rule), var(--rule)),
+    linear-gradient(var(--rule), var(--rule)), linear-gradient(var(--rule), var(--rule)),
+    linear-gradient(var(--rule), var(--rule)), linear-gradient(var(--rule), var(--rule)),
+    linear-gradient(var(--paper), var(--paper));
+  background-position:
+    left top, right top, left bottom, right bottom,
+    left 10px top 10px, left 16px top 16px,
+    left 10px bottom 10px, left 16px bottom 16px,
+    left 10px top 10px, left 16px top 16px,
+    right 10px top 10px, right 16px top 16px,
+    0 0;
+  background-size:
+    140px, 140px, 140px, 140px,
+    calc(100% - 20px) 1px, calc(100% - 32px) 1px,
+    calc(100% - 20px) 1px, calc(100% - 32px) 1px,
+    1px calc(100% - 20px), 1px calc(100% - 32px),
+    1px calc(100% - 20px), 1px calc(100% - 32px),
+    100% 100%;
+}
+
+/* 角花比书边线占地方，正文再往里收一些 */
+body > * {
+  margin-left: 48px;
+  margin-right: 48px;
+  padding-top: 56px;
+  padding-bottom: 56px;
+}
+
+/* 浅色时插图的白底和羊皮纸融在一起；封面保持原色 */
+@media (prefers-color-scheme: light) {
+  img:not([src*="cover"]) {
+    mix-blend-mode: multiply;
+  }
+}
+
+/* 原书的类：后记、署名、注释改用正文字体和主题色 */
+.HouJi {
+  font-family: inherit;
+}
+
+.ZuoZhe {
+  font-family: inherit;
+  color: var(--accent);
+}
+
+.ZhuShi {
+  font-size: 0.85em;
+  color: var(--accent);
+}

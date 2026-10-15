@@ -1,0 +1,7 @@
+/* 31.00 General Works：非虚构。白底，正文和标题都用思源宋体，不加装饰；只用强调色区分种类。 */
+@media (prefers-color-scheme: light) {
+  :root { --paper: #fdfcf9; --heading: #4a5363; --accent: #4a5363; }
+}
+@media (prefers-color-scheme: dark) {
+  :root { --heading: #a9b4c6; --accent: #a9b4c6; }
+}

@@ -1,0 +1,7 @@
+/* 31.05 Science：非虚构。白底，正文和标题都用思源宋体，不加装饰；只用强调色区分种类。 */
+@media (prefers-color-scheme: light) {
+  :root { --paper: #fdfcf9; --heading: #2b5580; --accent: #2b5580; }
+}
+@media (prefers-color-scheme: dark) {
+  :root { --heading: #9dbfe4; --accent: #9dbfe4; }
+}

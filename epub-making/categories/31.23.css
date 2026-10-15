@@ -1,0 +1,14 @@
+/* 31.23 Romance：言情、恋爱喜剧。淡粉米底、玫瑰色强调，正文霞鹜文楷；章首一朵小花。 */
+:root {
+  --body-font: "Book Kai";
+  --heading-font: "Book Kai";
+  --ornament: url(romance-flower.svg) center / contain no-repeat;
+  --ornament-height: 1.2em;
+  --scene-break: "❀";
+}
+@media (prefers-color-scheme: light) {
+  :root { --paper: #fbf4f2; --ink: #3d2e30; --heading: #8f3f55; --accent: #b0566e; --rule: #dcb3bd; }
+}
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #201a1b; --ink: #e6d9da; --heading: #e3a2b2; --accent: #d78a9e; }
+}

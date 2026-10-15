@@ -1,0 +1,9 @@
+/* 31.10 Literary Fiction：严肃文学。米白底、墨色字，思源宋体；标题字距放宽，章首一道细线，克制。 */
+:root {
+  --ornament: linear-gradient(var(--rule), var(--rule)) center / 3em 1px no-repeat;
+  --ornament-height: 1px;
+}
+@media (prefers-color-scheme: light) {
+  :root { --paper: #faf7f0; --ink: #2a2622; --heading: #2a2622; --accent: #7b6f62; --rule: #9d9183; }
+}
+h1, h2, h3 { letter-spacing: 0.3em; font-weight: 400; }

@@ -13,6 +13,7 @@ description: "Turn web-novel txt files (GBK or UTF-8) into valid per-volume EPUB
 | `fetch.py` | 礼貌下载（见下文规则） |
 | `check_toc.py` | epub 目录和参考目录逐条对照 |
 | `cover.py` | 从书衣展开图裁出封面，出预览图 |
+| `restyle.py` | 给已有的 epub 换样式：嵌入子集字体、套默认样式和书的主题、清理空段落、补章节标题 |
 | `sources/<站点>.md` / `.py` | 站点特例。已有：[wenku8](sources/wenku8.md) |
 
 依赖：`pandoc`、`epubcheck`（Arch：`pacman -S epubcheck`）、Python 的 `numpy` 和 `Pillow`（只有 `cover.py` 用）。
@@ -49,6 +50,43 @@ python3 $S/cover.py img/2/001.jpg -o cover2.jpg --preview cover2-preview.jpg
 ```
 
 中间文件（txt、图片、预览）放 scratchpad，不放进 JD。
+
+## 样式
+
+目标阅读器是 Arch 上的 calibre ebook-viewer（Chromium 内核，CSS 支持完整），不为 Kindle 妥协。
+
+**依据**：按书的 `dc:language` 选规则。中文书（简体、繁体）按 W3C《中文排版需求》（clreq，https://www.w3.org/TR/clreq/）。英文书按 Standard Ebooks 的 Manual of Style（https://standardebooks.org/manual），它的结构写法两种语言都参考。CSS 文件头注明采用了哪些条目。
+
+**分两层**：
+- 默认样式：轻松的轻小说风格，所有书都用。管正文排版：字体、行距、缩进、标题、插图。
+- 书的主题（可选）：每个系列可以单独建一个，放在 `themes/<系列名>/`。只覆盖字体、配色和装饰（书边、章首、场景分隔的纹样），装饰贴合这本书的题材。
+
+**排版规则（两种语言通用）**：
+- 段间不留空，靠首行缩进分段。
+- 留白用 CSS margin，不用空段落（`<p>　</p>`、`<p>&nbsp;</p>`）占位。
+- 每章开头要有页面上看得见的标题元素，不能只写在 `<title>` 里。
+- 场景分隔用 `<hr/>` 加样式，不用 `***` 之类的文字。
+- 正文字体嵌进 epub，只用 OFL 等允许嵌入的开源字体，按全书用到的字做子集；不依赖系统装了什么字体。
+- 装饰用 SVG（矢量，体积小，深浅色都清楚），不能挡住正文，也不能挤占行宽。
+
+**中文**：首行缩进 2em，每一段都缩进；两端对齐；不断词。繁体书的标点位置按 clreq 里繁体的规定。
+
+**英文**：首行缩进 1em；标题和场景分隔后的第一段不缩进（Standard Ebooks 的做法）；两端对齐，同时开连字符断词（`hyphens: auto`，要求 `xml:lang="en"` 写对）。出版社排好版的书（如 31.08 里的学术书），先问用户要不要动。
+
+**calibre ebook-viewer 的限制**（读 `/usr/share/calibre/viewer.js` 得知，主题要绕开）：
+- `html`、`body` 的背景色被设成透明，文字颜色被设成阅读器配色。所以底色用 `background-image` 铺一层，文字颜色加 `!important`。
+- 翻页模式下 `body` 的 margin、padding 被锁成 0。要给正文留边，就加在 `body > *` 上，再配 `box-decoration-break: clone`。
+- 阅读器会按配色设置 `color-scheme`，所以用 `prefers-color-scheme` 区分浅色和深色；两种都要截图检查。
+- `background-attachment: fixed` 的背景每一页都会画，书边装饰就靠它。
+
+字体缓存在 `~/.cache/epub-making/fonts/`（霞鹜文楷 Regular/Medium，https://github.com/lxgw/LxgwWenKai/releases ）。
+
+**改已有的 epub**：
+0. 尊重原书已有的排版。先跑 `restyle.py X.epub --report`，再在 ebook-viewer 里截一张原书的图。只要原书排过版（样式表规则多、嵌了字体、标题有颜色或图片、段落有自己的间距，如多看格式的网文），就先把原书截图给用户看，讨论保留哪些、改哪些，用户同意后再改；必要时给这本书单独建主题，在主题里保留原来的做法。只有没怎么排版的书才直接套种类样式。
+1. 先把原书复制到 scratchpad，只改副本；原文件在用户确认之前不动。
+2. 选一章做 2–3 个版本，用 ebook-viewer 截图，拼在一起给用户选。窗口不要开在用户的主屏（3440 宽屏）上：Hyprland 下先用 `hyprctl eval` 加一条临时 window rule，把 `calibre-ebook-viewer` 放到左屏的 11 号工作区；用 `--open-at 'search:正文片段'` 跳到要看的页，`grim -g` 截窗口，截完关掉窗口、停用这条 rule。
+3. 定稿后再批量改，每本都跑 epubcheck，抽查截图。
+4. 用户确认后，才替换 JD 里的原文件。默认样式定稿后要写回 `style.css`，书的主题写进 `themes/`。
 
 ## 放进 JD
 

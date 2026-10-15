@@ -1,0 +1,7 @@
+/* 31.04 Language：非虚构。白底，正文和标题都用思源宋体，不加装饰；只用强调色区分种类。 */
+@media (prefers-color-scheme: light) {
+  :root { --paper: #fdfcf9; --heading: #9b3d2e; --accent: #9b3d2e; }
+}
+@media (prefers-color-scheme: dark) {
+  :root { --heading: #e2a090; --accent: #e2a090; }
+}

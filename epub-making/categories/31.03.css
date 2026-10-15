@@ -1,0 +1,7 @@
+/* 31.03 Social Sciences：非虚构。白底，正文和标题都用思源宋体，不加装饰；只用强调色区分种类。 */
+@media (prefers-color-scheme: light) {
+  :root { --paper: #fdfcf9; --heading: #2f6567; --accent: #2f6567; }
+}
+@media (prefers-color-scheme: dark) {
+  :root { --heading: #93c9c9; --accent: #93c9c9; }
+}

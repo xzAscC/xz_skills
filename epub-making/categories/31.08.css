@@ -1,0 +1,7 @@
+/* 31.08 Literature：非虚构。白底，正文和标题都用思源宋体，不加装饰；只用强调色区分种类。 */
+@media (prefers-color-scheme: light) {
+  :root { --paper: #fdfcf9; --heading: #743a3a; --accent: #743a3a; }
+}
+@media (prefers-color-scheme: dark) {
+  :root { --heading: #d9a3a3; --accent: #d9a3a3; }
+}

@@ -1,0 +1,47 @@
+/* 31.19 Fantasy：奇幻。暖米底、棕金强调，正文霞鹜文楷；书边一圈双线，章首一枚菱形纹样。 */
+:root {
+  --body-font: "Book Kai";
+  --heading-font: "Book Kai";
+  --ornament: url(fantasy-rule.svg) center / contain no-repeat;
+  --ornament-height: 1.2em;
+  --scene-break: "◆";
+}
+@media (prefers-color-scheme: light) {
+  :root { --paper: #f6efe2; --ink: #3a3026; --heading: #5a4325; --accent: #8a6a3a; --rule: #b89a68; }
+}
+@media (prefers-color-scheme: dark) {
+  :root { --paper: #1f1b16; --ink: #e0d6c4; --heading: #d6b47a; --accent: #c9a66a; --rule: #7d6744; }
+}
+
+/* 书边双线：fixed 背景每一页都画；线距页边 10px、16px */
+html {
+  background-image:
+    linear-gradient(var(--rule), var(--rule)), linear-gradient(var(--rule), var(--rule)),
+    linear-gradient(var(--rule), var(--rule)), linear-gradient(var(--rule), var(--rule)),
+    linear-gradient(var(--rule), var(--rule)), linear-gradient(var(--rule), var(--rule)),
+    linear-gradient(var(--rule), var(--rule)), linear-gradient(var(--rule), var(--rule)),
+    linear-gradient(var(--paper), var(--paper));
+  background-position:
+    left 10px top 10px, left 16px top 16px,
+    left 10px bottom 10px, left 16px bottom 16px,
+    left 10px top 10px, left 16px top 16px,
+    right 10px top 10px, right 16px top 16px,
+    0 0;
+  background-size:
+    calc(100% - 20px) 1px, calc(100% - 32px) 1px,
+    calc(100% - 20px) 1px, calc(100% - 32px) 1px,
+    1px calc(100% - 20px), 1px calc(100% - 32px),
+    1px calc(100% - 20px), 1px calc(100% - 32px),
+    100% 100%;
+  background-repeat: no-repeat;
+}
+
+/* 翻页模式下 calibre 把 body 的 margin、padding 锁成 0，留边加在子元素上；clone 让每一页都留 */
+body > * {
+  margin-left: 40px;
+  margin-right: 40px;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
