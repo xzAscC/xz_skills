@@ -1,0 +1,84 @@
+epub-making/restyle.py
+  s_2868b42721aac2::t_0043b519bad8f3 61
+  s_2868b42721aac2::t_d7982798f33ef4 98-105,109-110
+  s_2868b42721aac2::t_f850608a1963fe 43
+  s_2868b42721aac2::t_3c75b69e1c2101 114,117-120
+  s_2868b42721aac2::t_2951552b84f336 1,3,5,8-25,35,38-42,44,49-60,62-67,73-74,85-97,106-108,112-113,121-124,137-151,154-162,168,178-193,196-201
+  s_2868b42721aac2::t_dd4cd4572899a7 46-48
+  s_2868b42721aac2::t_f0218e915c91de 115-116
+  s_2868b42721aac2::t_c4c53f52e1af7b 2,4,6-7,26-34,45,68-72,75-84,111,125-136,163-167,169-177,194-195
+  s_2868b42721aac2::t_872c43ebea0b45 36-37
+  s_2868b42721aac2::t_55dac078b78aaa 152-153
+epub-making/SKILL.md
+  s_2868b42721aac2::t_a3e39568d6c2a3 85
+  s_2868b42721aac2::t_83242006f8192e 87
+  s_2868b42721aac2::t_e55936c2a42cf9 64-66,68,71-74
+  s_2868b42721aac2::t_bea1c4fd5d331e 54-57,59-63,67,69-70,75,84,86,88-90
+  s_2868b42721aac2::t_76a623ec5dff13 76-83
+  s_2868b42721aac2::t_3793eeab8d4ace 16
+  s_2868b42721aac2::t_bfa1050cfdc09f 58
+epub-making/themes/狼与香辛料/theme.css
+  s_2868b42721aac2::t_08d7ea43ade70f 1,5-6,21-23,29-33,36-39,41,51-52,58-66,68-71,73
+  s_2868b42721aac2::t_56180d89e0736e 2-4,8-13,17,20,45
+  s_2868b42721aac2::t_ca95e379114488 7,14-16,18-19,24-28,34-35,40,42-44,46,53-57,67,72
+  s_2868b42721aac2::t_71ef0fd05e3fd9 47-50
+epub-making/style.css
+  s_2868b42721aac2::t_d4acb60cfcaf3d 2-7,9-15,17-44,49-50,62,65,70,74-82,88,92,96,120,124-138
+  s_2868b42721aac2::t_61672038d632a3 1,8,16,45-48,51-61,63-64,66-69,71-73,83-87,89-91,93-95,97-119,121-123,139
+epub-making/categories/31.00.css
+  s_2868b42721aac2::t_7e2b79cd2f8d3a 1-7
+epub-making/categories/31.02.css
+  s_2868b42721aac2::t_71fda4c55ef92d 1-7
+epub-making/categories/31.03.css
+  s_2868b42721aac2::t_80781d0ec37410 1-7
+epub-making/categories/31.04.css
+  s_2868b42721aac2::t_7aa84280c97140 1-7
+epub-making/categories/31.05.css
+  s_2868b42721aac2::t_a5377ceba6a02d 1-7
+epub-making/categories/31.08.css
+  s_2868b42721aac2::t_59056f5441ea55 1-7
+epub-making/categories/31.09.css
+  s_2868b42721aac2::t_400faa8354fcdb 1-7
+epub-making/categories/31.10.css
+  s_2868b42721aac2::t_d03ab5d6a4f6fc 1-9
+epub-making/categories/31.13.css
+  s_2868b42721aac2::t_0b08b82af10ebe 1-12
+epub-making/categories/31.15.css
+  s_2868b42721aac2::t_417d0b2c3507c5 1-12
+epub-making/categories/31.19.css
+  s_2868b42721aac2::t_b77ed1de3bc06e 1-47
+epub-making/categories/31.23.css
+  s_2868b42721aac2::t_600f6b4bf333a0 1-14
+epub-making/categories/fantasy-rule.svg
+  s_2868b42721aac2::t_84070374d9ed4e 1
+epub-making/categories/mystery-rule.svg
+  s_2868b42721aac2::t_0e94e0d110223c 1
+epub-making/categories/romance-flower.svg
+  s_2868b42721aac2::t_1e7f62787903bb 1
+epub-making/themes/狼与香辛料/corner-bl.svg
+  s_2868b42721aac2::t_e14abeba93551e 1
+epub-making/themes/狼与香辛料/corner-br.svg
+  s_2868b42721aac2::t_b2a4f0d61bbce2 1
+epub-making/themes/狼与香辛料/corner-tl.svg
+  s_2868b42721aac2::t_99fce104fb05d9 1
+epub-making/themes/狼与香辛料/corner-tr.svg
+  s_2868b42721aac2::t_6287d3405d7e6b 1
+epub-making/themes/狼与香辛料/wheat-rule.svg
+  s_2868b42721aac2::t_ca2a6e135ccc9e 1
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "6a40697343457c81af8f42609e30ce3b9748d7dc",
+  "prompts": {},
+  "sessions": {
+    "s_2868b42721aac2": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "6d77ab18-3143-46a7-a2a0-1f5ce96630cc",
+        "model": "unknown"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
