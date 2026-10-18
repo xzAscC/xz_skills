@@ -49,7 +49,8 @@ Each gate is a stop. Do not continue and report the problem afterwards.
 | Possible secret (`.env`, keys, tokens, `credentials*`) | Stop and list the files. Stage one only when the user names it. Offer `.gitignore` instead. |
 | File larger than 5 MB, or binary media | Stop and confirm. History keeps every blob forever. |
 | A file you did not change | Do not stage it. It is the user's work in progress. |
-| File with hand-picked hunks (staged and unstaged parts) | Do not re-stage the whole file. Ask first. |
+| A file you changed that also has hunks you did not write (another session or the user) | Stop. Show those hunks and ask: commit them together, or wait. |
+| File with hand-picked hunks (staged and unstaged parts) | Do not commit the whole file. Ask first. |
 
 Never, unless the user asks for it explicitly: `--no-verify`, `--force` or
 `--force-with-lease`, `git reset --hard`, `git clean`, `git stash pop`,
@@ -94,21 +95,35 @@ trailer that your instructions require.
 
 ## 6. Execute and verify
 
+Other sessions may work in the same tree and share its index, so a plain
+`git commit` can take what they staged, and theirs can take yours. Commit
+with `--only`: git builds a temporary index from HEAD plus the paths you
+name, holds the index lock, and ignores everything else that is staged.
+
 1. Write the message to a file in the scratchpad. Do not use `-m` with a
    heredoc, because a body line that reads `EOF` cuts the message.
-2. Stage by explicit path, always after `--`: `git add -- <path> <path>`.
-   Never `git add -A` or `git add .`.
-3. `git commit -F <message-file>`, then check the exit code. A clean
-   `git status` does not prove success (signing and hook failures look the
-   same).
-4. `git log -1 --format='%h %s'` to see what landed (hooks can rewrite the
-   message). Record the short SHA.
-5. `git status --short`: if a hook rewrote files after the snapshot, stop and
-   report. Do not sweep them into the next commit.
-6. If a hook rejects the commit, report its output, fix the cause and make a
+2. For each untracked path (a new file, or the new path of a rename done
+   with plain `mv`), run `git add -N -- <path>`. This records only the
+   path, so no other commit can take its content. Never `git add -A` or
+   `git add .`.
+3. `git commit --only -F <message-file> -- <path> <path>` with every path
+   of the commit (both paths of a rename), then check the exit code. A
+   clean `git status` does not prove success (signing and hook failures
+   look the same). During a merge, rebase or cherry-pick, git refuses a
+   partial commit: use plain `git commit -F <message-file>` (section 3).
+4. If git says `index.lock` exists, another git command is running. Wait a
+   few seconds and retry, at most three times. Never delete `index.lock`.
+5. `git show --stat --format='%h %s' HEAD` to see what landed (hooks can
+   rewrite the message). It must hold only your paths and files that a
+   hook adds. Record the short SHA.
+6. `git status --short`: if a hook rewrote files after the snapshot, stop and
+   report. Do not sweep them into the next commit. A file shown as `MM`
+   that a pre-commit hook stages went only into the temporary index; run
+   `git reset -q -- <path>`, unless a post-commit hook already does.
+7. If a hook rejects the commit, report its output, fix the cause and make a
    new commit. Do not amend and do not retry with `--no-verify`.
-7. In batch mode, stop at the first failure and report what was committed,
-   what is staged and what remains. Unstage only your own paths with
+8. In batch mode, stop at the first failure and report what was committed
+   and what remains. Unstage only your own paths with
    `git restore --staged -- <paths>`, never a blanket `git reset`.
 
 To fix an older unpushed commit, use `git commit --fixup=<sha>`. Squash it
