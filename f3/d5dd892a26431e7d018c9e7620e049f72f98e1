@@ -1,0 +1,20 @@
+git-workflow/SKILL.md
+  s_a67956beb51c4f::t_5dee77b239da49 98-102,105-123,125-126
+  s_a67956beb51c4f::t_a8295e32a053aa 52-53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f3d5dd892a26431e7d018c9e7620e049f72f98e1",
+  "prompts": {},
+  "sessions": {
+    "s_a67956beb51c4f": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "7dfcfe4d-20f3-413d-b256-c8d13e50c423",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
