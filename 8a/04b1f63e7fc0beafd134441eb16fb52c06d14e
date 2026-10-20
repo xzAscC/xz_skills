@@ -1,0 +1,31 @@
+epub-making/style.css
+  s_08e174833ab3f7::t_3e7e994079dcb0 129-156,158,160-169
+  s_08e174833ab3f7::t_9e6cf34756cad2 26-27
+  s_08e174833ab3f7::t_9d7b6061cb4931 157,159
+epub-making/restyle.py
+  s_08e174833ab3f7::t_0c546ce9a3a938 36-37,43-158
+  s_08e174833ab3f7::t_ddad42727aa29b 299-300,302-303,305,307-308,310
+  s_08e174833ab3f7::t_f6febdc453ed48 4,10,22
+  s_08e174833ab3f7::t_183e44a8e83fd6 289-290
+  s_08e174833ab3f7::t_739860b6aee5dd 250
+  s_08e174833ab3f7::t_19adbb2a03d7ef 336
+  s_08e174833ab3f7::t_50e1f6430a003b 207
+  s_08e174833ab3f7::t_13584b5b8d96b1 195-206,209-215
+  s_08e174833ab3f7::t_18b84415c0c429 233-234,238-240
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "8a04b1f63e7fc0beafd134441eb16fb52c06d14e",
+  "prompts": {},
+  "sessions": {
+    "s_08e174833ab3f7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "8b543b71-f00e-489c-b769-d7fbb78080c4",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
