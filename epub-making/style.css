@@ -23,6 +23,8 @@
   --rule: #c9c1b4;
   --body-font: "Book Serif";
   --heading-font: "Book Serif";
+  --quote-font: "Book Fangsong";
+  --sign-font: "Book Kai";
   --ornament: none;
   --ornament-height: 0;
   --scene-break: "*　*　*";
@@ -122,6 +124,47 @@ hr {
 
 hr::after {
   content: var(--scene-break);
+}
+
+/* restyle.py --strip-inline 把内联样式换成的 class（rs- 开头，免得和原书的撞名） */
+/* 引文：原书用仿宋排的公文、歌词、摘录 */
+.rs-quote {
+  font-family: var(--quote-font), var(--body-font), serif;
+}
+
+/* 落款：楷体，靠右；连着几行的落款只在第一行前留空 */
+.rs-sign {
+  text-indent: 0;
+  text-align: right;
+  font-family: var(--sign-font), var(--body-font), serif;
+}
+
+:not(.rs-sign) + .rs-sign {
+  margin-top: 1em;
+}
+
+.rs-center {
+  text-indent: 0;
+  text-align: center;
+}
+
+.rs-small {
+  font-size: 0.6em;
+  letter-spacing: 0.3em;
+  color: var(--accent);
+}
+
+/* 脚注：排在引用它的段落后面，小一号，用强调色；左边和正文的首行缩进对齐（2em ÷ 0.85） */
+aside.rs-note {
+  margin: 0.3em 0 0.6em 2.35em;
+  font-size: 0.85em;
+  line-height: 1.6;
+  color: var(--accent);
+}
+
+.rs-noteref img {
+  width: auto;
+  height: 1em;
 }
 
 /* 英文 */
