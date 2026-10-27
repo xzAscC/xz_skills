@@ -462,3 +462,12 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(files[0]["notes"], ["复制自 a.py"])
         self.assertEqual(files[1]["rows"][1:], [("c", 1, 1, "x"), ("c", 2, 2, ""), ("d", 3, "", "y"), ("a", "", 3, "z")])
         self.assertEqual(report.parse_diff(""), [])
+
+    def test_theme_toggle_and_both_palettes(self):
+        page = self.render()
+        for theme in ("auto", "light", "dark"):
+            self.assertIn(f'data-theme-set="{theme}"', page)
+        self.assertIn(':root[data-theme="dark"]', page)
+        self.assertIn(':root:not([data-theme="light"])', page)
+        self.assertIn("--bg:#f0eee6", page)
+        self.assertLess(page.index("pr-review-theme"), page.index("<style>"))

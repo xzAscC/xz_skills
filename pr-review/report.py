@@ -41,24 +41,36 @@ HUNK = re.compile(r"@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@")
 NOTES = {"Binary files ": "二进制文件", "new file mode ": "新文件，权限 ", "deleted file mode ": "删除文件，权限 ",
          "old mode ": "原权限 ", "new mode ": "新权限 ", "rename from ": "重命名自 ", "copy from ": "复制自 "}
 
-CSS = """
-:root { color-scheme:light; --bg:#f7f7f8; --panel:#fff; --sunken:#f1f1f3; --line:#e4e4e8;
-  --fg:#1b1c1f; --muted:#5f636b; --faint:#999da5; --accent:#5e6ad2; --good:#2b8a52; --bad:#cf3f35;
-  --warn:#a86b00; --good-bg:#e8f5ee; --bad-bg:#fcebea; --warn-bg:#fbf1dc; --accent-bg:#eceefb; }
-@media (prefers-color-scheme: dark) { :root { color-scheme:dark; --bg:#0e0f11; --panel:#16171a;
-  --sunken:#1d1e22; --line:#27292e; --fg:#e7e8eb; --muted:#a3a7ae; --faint:#6c717a; --accent:#8d95f2;
-  --good:#4cb782; --bad:#f06a6a; --warn:#f2c94c; --good-bg:rgba(76,183,130,.13);
-  --bad-bg:rgba(240,106,106,.13); --warn-bg:rgba(242,201,76,.12); --accent-bg:rgba(141,149,242,.14); } }
+# Light is parchment with serif prose, after claude.ai; dark is Linear's neutral grey, all sans.
+# Dark applies when the system asks for it, unless the page toggle (data-theme on <html>) overrides.
+LIGHT = """color-scheme:light; --bg:#f0eee6; --panel:#faf9f5; --sunken:#e8e6dc; --line:#dcd8cb;
+  --fg:#141413; --muted:#5e5d59; --faint:#8e8b82; --accent:#c96442; --good:#5a7d34; --bad:#b4432e;
+  --warn:#9c6418; --good-bg:#e5ead6; --bad-bg:#f4dfd6; --warn-bg:#f2e5c9; --accent-bg:#f5e4da;
+  --serif:Newsreader, "Noto Serif SC", "Source Han Serif SC", "Noto Serif", Georgia, serif; --prose:15.5px;"""
+DARK = """color-scheme:dark; --bg:#0e0f11; --panel:#16171a; --sunken:#1d1e22; --line:#27292e;
+  --fg:#e7e8eb; --muted:#a3a7ae; --faint:#6c717a; --accent:#8d95f2; --good:#4cb782; --bad:#f06a6a;
+  --warn:#f2c94c; --good-bg:rgba(76,183,130,.13); --bad-bg:rgba(240,106,106,.13);
+  --warn-bg:rgba(242,201,76,.12); --accent-bg:rgba(141,149,242,.14); --serif:var(--sans); --prose:14px;"""
+FONTS = ("https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600"
+         "&family=Noto+Serif+SC:wght@400;600&display=swap")
+CSS = f"""
+:root {{ --sans:Inter, system-ui, "Noto Sans CJK SC", sans-serif; {LIGHT} }}
+@media (prefers-color-scheme: dark) {{ :root:not([data-theme="light"]) {{ {DARK} }} }}
+:root[data-theme="dark"] {{ {DARK} }}
+""" + """
 * { box-sizing:border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); -webkit-font-smoothing:antialiased;
-  font:14px/1.6 Inter, system-ui, "Noto Sans CJK SC", sans-serif; }
+  font:14px/1.6 var(--sans); }
 main { max-width:1240px; margin:0 auto; padding:40px 24px 96px; }
 a { color:inherit; text-decoration:none; } a:hover { text-decoration:underline; }
 code, pre, .mono { font-family:"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace; font-size:12.5px; }
-.crumb { color:var(--muted); font-size:13px; }
-h1 { font-size:24px; font-weight:600; letter-spacing:-.01em; margin:4px 0 14px; }
+.top { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+.crumb { color:var(--muted); font-size:13px; } .crumb a { color:var(--accent); }
+h1, h3, .verdict-title, .summary p, .side p { font-family:var(--serif); }
+.summary p, .side p { font-size:var(--prose); }
+h1 { font-size:26px; font-weight:600; letter-spacing:-.01em; line-height:1.3; margin:6px 0 14px; }
 h2 { font-size:12px; font-weight:600; letter-spacing:.08em; color:var(--faint); margin:52px 0 14px; }
-h3 { font-size:15px; font-weight:600; margin:0 0 6px; }
+h3 { font-size:16px; font-weight:600; margin:0 0 6px; }
 .chips { display:flex; flex-wrap:wrap; gap:6px; }
 .chip { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--panel);
   border-radius:999px; padding:2px 10px; font-size:12.5px; color:var(--muted); white-space:nowrap; }
@@ -80,7 +92,7 @@ h3 { font-size:15px; font-weight:600; margin:0 0 6px; }
 .summary p { max-width:82ch; margin:18px 0 0; }
 .muted { color:var(--muted); }
 .diagram { padding:20px 20px 12px; overflow-x:auto; }
-.diagram svg { display:block; max-width:100%; height:auto; }
+.diagram svg { display:block; max-width:100%; height:auto; font-family:var(--sans); }
 .n rect { fill:var(--panel); stroke:var(--line); stroke-width:1.2; }
 .n.new rect { stroke:var(--accent); fill:var(--accent-bg); } .n.modified rect { stroke:var(--warn); fill:var(--warn-bg); }
 .n.external rect { stroke-dasharray:4 3; fill:var(--sunken); }
@@ -148,6 +160,15 @@ pre.out { white-space:pre-wrap; overflow-wrap:anywhere; background:var(--sunken)
 # Stacked mode shows one screenshot per pair; clicking it swaps before/after in place,
 # which shows small differences better than side by side. A file link opens its diff.
 JS = """
+const root = document.documentElement, themes = document.querySelectorAll('[data-theme-set]');
+const markTheme = () => themes.forEach(b => b.classList.toggle('on', (root.dataset.theme || 'auto') === b.dataset.themeSet));
+themes.forEach(b => b.onclick = () => {
+  const t = b.dataset.themeSet;
+  if (t === 'auto') delete root.dataset.theme; else root.dataset.theme = t;
+  try { t === 'auto' ? localStorage.removeItem('pr-review-theme') : localStorage.setItem('pr-review-theme', t); } catch (e) {}
+  markTheme();
+});
+markTheme();
 document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
   document.body.classList.toggle('stacked', b.dataset.mode === 'stacked');
   document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('on', x === b));
@@ -389,7 +410,10 @@ def render(data, root):
         chips.append(f'<span class="chip">{len(by_path)} 个文件 {counts(sum(f["add"] for f in diff), sum(f["del"] for f in diff))}</span>')
     chips.append(f'<span class="chip">测试 <b>{esc(test_text or "没有记录")}</b></span>')
     chips.append(f'<span class="chip">修复轮数 <b>{esc(data.get("rounds", 0))} / 3</b></span>')
-    out = [f'<div class="crumb">{" · ".join(crumb)}</div>', f"<h1>{esc(data['title'])}</h1>",
+    toggle = ('<span class="seg" aria-label="主题">' + "".join(
+        f'<button data-theme-set="{k}">{v}</button>' for k, v in (("auto", "自动"), ("light", "亮"), ("dark", "暗")))
+        + "</span>")
+    out = [f'<div class="top"><div class="crumb">{" · ".join(crumb)}</div>{toggle}</div>', f"<h1>{esc(data['title'])}</h1>",
            f'<div class="chips">{"".join(chips)}</div>']
 
     # Verdict first: what blocks the merge, then what needs a look, then optional items.
@@ -511,8 +535,12 @@ def render(data, root):
     if data.get("revert"):
         out.append(f'<h2>如何回滚</h2><pre class="out">{esc(data["revert"])}</pre>')
 
+    # The saved theme is applied in <head>, before the first paint, so the page does not flash.
     return ('<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">'
             '<meta name="viewport" content="width=device-width, initial-scale=1">'
+            "<script>try { const t = localStorage.getItem('pr-review-theme'); "
+            "if (t) document.documentElement.dataset.theme = t; } catch (e) {}</script>"
+            f'<link rel="stylesheet" href="{FONTS}">'
             f"<title>{esc(data['title'])}</title><style>{CSS}</style></head>"
             f"<body><main>{''.join(out)}</main><script>{JS}</script></body></html>")
 
