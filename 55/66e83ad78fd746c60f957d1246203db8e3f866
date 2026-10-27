@@ -1,0 +1,34 @@
+pr-review/REVIEW.template.md
+  s_42a176c3481f9e::t_43e76bb099c314 1-33
+pr-review/glm-prompt.md
+  s_42a176c3481f9e::t_77222789994cb1 1-15
+pr-review/report.py
+  s_42a176c3481f9e::t_deddd612b35045 1-58,61-121,123-184
+  s_42a176c3481f9e::t_d26c5d2941e0bb 59-60
+  s_42a176c3481f9e::t_e1e63ed619090e 122
+git-workflow/branches.md
+  s_42a176c3481f9e::t_d0f18703eedacb 52-54
+README.md
+  s_42a176c3481f9e::t_c6895ad569dc93 41
+  s_42a176c3481f9e::t_fc274e5d4ec7d8 17,26
+pr-review/SKILL.md
+  s_42a176c3481f9e::t_e563a9ad0fe20f 1-113
+tests/test_helpers.py
+  s_42a176c3481f9e::t_fec1041b695547 257-307
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "5566e83ad78fd746c60f957d1246203db8e3f866",
+  "prompts": {},
+  "sessions": {
+    "s_42a176c3481f9e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91dd1d25-404f-41c5-ba38-6403fda91798",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
