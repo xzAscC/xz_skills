@@ -254,3 +254,54 @@ class EpubTests(unittest.TestCase):
         self.assertTrue(epub.book_id(a).startswith("urn:uuid:"))
         self.assertNotEqual(epub.book_id(a), epub.book_id(SimpleNamespace(id=None, author="作者", title="书名2")))
         self.assertEqual(epub.book_id(SimpleNamespace(id="urn:isbn:1", author="", title="")), "urn:isbn:1")
+
+
+report = load("pr_report", "pr-review/report.py")
+
+
+class ReportTests(unittest.TestCase):
+    def render(self, **data):
+        return report.render({"title": "t", **data}, ROOT)
+
+    def test_open_important_findings_are_counted(self):
+        page = self.render(findings=[
+            {"label": "Important", "where": "a.py:1", "text": "x", "resolution": ""},
+            {"label": "Important", "where": "a.py:2", "text": "y", "resolution": "fixed abc123"},
+            {"label": "Important", "where": "a.py:3", "text": "z", "resolution": "open: waiting"},
+            {"label": "Nit", "where": "a.py:4", "text": "w"},
+        ])
+        self.assertIn("未解决 Important：2", page)
+        self.assertIn("Important 3 / Nit 1 / Pre-existing 0", page)
+        self.assertNotIn("无未解决问题", page)
+
+    def test_clean_report_says_so(self):
+        page = self.render(tests=[{"command": "pytest", "status": "pass"}])
+        self.assertIn("无未解决问题", page)
+        self.assertIn("没有审查意见", page)
+        self.assertIn('class="good">通过 1', page)
+
+    def test_not_run_tests_are_not_shown_as_passing(self):
+        page = self.render(tests=[{"command": "pytest -m gpu", "status": "not run", "reason": "no GPU"}])
+        self.assertIn('class="warn">未运行 1', page)
+
+    def test_text_is_escaped(self):
+        page = self.render(title="<b>t</b>", findings=[{"label": "Nit", "text": "<script>alert(1)</script>"}])
+        self.assertNotIn("<script>alert", page)
+        self.assertIn("&lt;script&gt;", page)
+        self.assertIn("<title>&lt;b&gt;t&lt;/b&gt;</title>", page)
+
+    def test_screens_are_embedded(self):
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "a.png").write_bytes(b"\x89PNG before")
+            Path(d, "b.png").write_bytes(b"\x89PNG after")
+            source = Path(d, "report.json")
+            source.write_text('{"title": "t", "screens": [{"name": "home", "before": "a.png", "after": "b.png"}]}')
+            with contextlib.redirect_stdout(io.StringIO()):
+                report.main(["report.py", str(source)])
+            page = Path(d, "report.html").read_text()
+        self.assertEqual(page.count("data:image/png;base64,"), 2)
+        self.assertNotIn('src="a.png"', page)
+
+    def test_missing_screenshot_stops(self):
+        with self.assertRaisesRegex(SystemExit, "screenshot not found"):
+            self.render(screens=[{"name": "home", "before": "missing.png", "after": "missing.png"}])
