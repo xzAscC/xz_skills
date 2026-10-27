@@ -1,0 +1,37 @@
+pr-review/report.py
+  s_42a176c3481f9e::t_20753df40cb630 106
+  s_42a176c3481f9e::t_7d2ca621ab35a2 276-279,285-286
+  s_42a176c3481f9e::t_f27daa0e4f8352 105
+  s_42a176c3481f9e::t_82bcf0ee967427 287-291
+  s_42a176c3481f9e::t_3e78de6c0b2699 216-222,224,226,228-232,234,242-249
+  s_42a176c3481f9e::t_b965b1dc67d534 309
+  s_42a176c3481f9e::t_67fd279917f5a1 421
+  s_42a176c3481f9e::t_ab494539c0e211 282-284
+  s_42a176c3481f9e::t_4fead5acb23f9d 280-281
+  s_42a176c3481f9e::t_d5e5f3a40a184a 118
+  s_42a176c3481f9e::t_7333b5ec810592 26
+  s_42a176c3481f9e::t_0078766f05ec64 386
+  s_42a176c3481f9e::t_6dcc7f041a74e7 423-424
+  s_42a176c3481f9e::t_86a9e4ad63497d 431,437,440,443-450
+  s_42a176c3481f9e::t_07dc2fbae0a59a 441-442,452
+  s_42a176c3481f9e::t_67ae4dc669b17e 366-372
+  s_42a176c3481f9e::t_38a3515cb2874e 41-42
+tests/test_helpers.py
+  s_42a176c3481f9e::t_e2dba1fc11d920 413-454
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "ac18b407bd70db66b6ff6b4ac730607b1c3f0990",
+  "prompts": {},
+  "sessions": {
+    "s_42a176c3481f9e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91dd1d25-404f-41c5-ba38-6403fda91798",
+        "model": "claude-opus-5-5"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
