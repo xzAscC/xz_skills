@@ -1,0 +1,27 @@
+pr-review/SKILL.md
+  s_42a176c3481f9e::t_fd2c5e5e8cd0b1 21
+pr-review/report.py
+  s_42a176c3481f9e::t_97e24c399cb134 114-116,119-120,124,129
+  s_42a176c3481f9e::t_ea46f54c516411 20
+  s_42a176c3481f9e::t_43bd1dce7ffbc0 186-187
+  s_42a176c3481f9e::t_4c51ea5f56c056 171-172
+  s_42a176c3481f9e::t_02cf2136381680 83-86,88,91,93-96,99-102
+tests/test_helpers.py
+  s_42a176c3481f9e::t_f35bda014a432e 336-365
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "0b66913a38c5ba45db2bde631e3b92f9b768c949",
+  "prompts": {},
+  "sessions": {
+    "s_42a176c3481f9e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91dd1d25-404f-41c5-ba38-6403fda91798",
+        "model": "unknown"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
