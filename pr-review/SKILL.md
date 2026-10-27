@@ -96,13 +96,19 @@ A round is: fix, test, commit, push, re-review.
 
 ## 7. Report
 
-Write `$DIR/report.json` (fields: docstring of `report.py`; paths relative to `$DIR`), then:
+Regenerate `$DIR/diff.patch` from the final branch, write `$DIR/report.json` (fields: docstring of `report.py`; paths relative to `$DIR`), then:
 
 ```bash
 python3 <this-skill-dir>/report.py "$DIR/report.json"   # writes $DIR/report.html
 ```
 
-The report opens with a summary (tier, tests, findings by label, open Important findings, or an explicit 无未解决问题), then findings, screenshots side by side, numbers, test output, rejected findings and how to revert. Screenshots are embedded, so the file stands alone. Write its text in Chinese. Open it in the browser, following the user's window-placement rules if they have any. Append a short summary to the PR body (`gh pr edit --body-file`): tier, tests, finding counts, rounds; the findings themselves stay local.
+The user should get the point in seconds, so the page goes from most to least important: the verdict with what needs the user (open Important findings and failed tests first), a short summary, then:
+
+- **Structure:** the changed files and what they call, in columns from left to right (for example entry, core, external tools), each node marked new, modified, unchanged or external, with short labels; and the stack (languages, libraries, tools) with one note each.
+- **Guide** (after Linear's guided reviews): the change in 2–5 sections, core first, supporting changes such as tests and docs last. Each section has a title, one or two sentences on why it exists and what it affects, and its files; the page shows their diffs beside it. Files no section names end up in a last section.
+- Evidence (screenshots, numbers, tests) and the review log, with fixed and rejected findings folded away.
+
+Screenshots and diffs are embedded, so the file stands alone. Write its text in Chinese. Open it in the browser, following the user's window-placement rules if they have any. Append a short summary to the PR body (`gh pr edit --body-file`): tier, tests, finding counts, rounds; the findings themselves stay local.
 
 ## 8. Hand-off
 

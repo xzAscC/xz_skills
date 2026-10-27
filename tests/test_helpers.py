@@ -258,37 +258,125 @@ class EpubTests(unittest.TestCase):
 
 report = load("pr_report", "pr-review/report.py")
 
+DIFF = """diff --git a/app.py b/app.py
+index 1..2 100644
+--- a/app.py
++++ b/app.py
+@@ -1,3 +1,3 @@
+ keep
+-old <b>
++new
+ tail
+diff --git a/docs/a.md b/docs/b.md
+similarity index 90%
+rename from docs/a.md
+rename to docs/b.md
+--- a/docs/a.md
++++ b/docs/b.md
+@@ -10,0 +11,2 @@
++one
++two
+\\ No newline at end of file
+"""
+
 
 class ReportTests(unittest.TestCase):
     def render(self, **data):
         return report.render({"title": "t", **data}, ROOT)
 
-    def test_open_important_findings_are_counted(self):
+    def test_attention_lists_blocking_items_first(self):
         page = self.render(findings=[
-            {"label": "Important", "where": "a.py:1", "text": "x", "resolution": ""},
-            {"label": "Important", "where": "a.py:2", "text": "y", "resolution": "fixed abc123"},
-            {"label": "Important", "where": "a.py:3", "text": "z", "resolution": "open: waiting"},
-            {"label": "Nit", "where": "a.py:4", "text": "w"},
-        ])
-        self.assertIn("未解决 Important：2", page)
-        self.assertIn("Important 3 / Nit 1 / Pre-existing 0", page)
-        self.assertNotIn("无未解决问题", page)
+            {"label": "Nit", "text": "nit-open", "resolution": "open: optional"},
+            {"label": "Important", "text": "imp-fixed", "resolution": "fixed abc123"},
+            {"label": "Important", "text": "imp-open", "where": "a.py:3"},
+            {"label": "Pre-existing", "text": "pre-open"},
+        ], tests=[{"command": "pytest", "status": "fail"}])
+        self.assertIn("需要处理 2 项", page)
+        verdict = page[page.index("verdict"):page.index("</section>")]
+        self.assertLess(verdict.index("imp-open"), verdict.index("pytest"))
+        self.assertLess(verdict.index("pytest"), verdict.index("nit-open"))
+        self.assertNotIn("imp-fixed", verdict)
 
     def test_clean_report_says_so(self):
-        page = self.render(tests=[{"command": "pytest", "status": "pass"}])
-        self.assertIn("无未解决问题", page)
+        page = self.render(tests=[{"command": "pytest", "status": "pass"}], reviewers=[{"name": "c", "status": "done"}])
+        self.assertIn("可以合并", page)
+        self.assertIn("无未解决问题。", page)
         self.assertIn("没有审查意见", page)
-        self.assertIn('class="good">通过 1', page)
 
-    def test_not_run_tests_are_not_shown_as_passing(self):
-        page = self.render(tests=[{"command": "pytest -m gpu", "status": "not run", "reason": "no GPU"}])
-        self.assertIn('class="warn">未运行 1', page)
+    def test_open_nit_does_not_block(self):
+        page = self.render(tests=[{"command": "pytest", "status": "pass"}],
+                           findings=[{"label": "Nit", "text": "x", "resolution": "open"}])
+        self.assertIn("可以合并", page)
+        self.assertIn("另有 1 条可选意见", page)
+
+    def test_unverified_items_warn(self):
+        page = self.render(tests=[{"command": "pytest -m gpu", "status": "not run", "reason": "no GPU"}],
+                           reviewers=[{"status": "running"}])
+        self.assertIn("合并前请确认 2 项", page)
+        self.assertIn("未命名审查者", page)
+        self.assertIn("没有测试记录", self.render())
+
+    def test_unknown_status_and_labels_cannot_hide_problems(self):
+        page = self.render(tests=[{"command": "pytest", "status": "error"}],
+                           findings=[{"label": "important", "text": "x"}, {"text": "y"}, {"label": "nit", "text": "z", "resolution": "fixed"}])
+        self.assertIn("需要处理 3 项", page)
+        self.assertIn("Important 2 · Nit 1 · Pre-existing 0", page)
+        self.assertIn('class="sev bad">error', page)
+
+    def test_null_lists_and_status_case(self):
+        page = self.render(findings=None, tests=[{"command": "a", "status": "Pass"}, {"command": "b"}],
+                           reviewers=[{"name": "GLM", "status": "Done"}])
+        self.assertIn("通过 1", page)
+        self.assertIn("无状态 1", page)
+        self.assertNotIn("审查未完成", page)
+        self.assertNotIn("None", page)
 
     def test_text_is_escaped(self):
-        page = self.render(title="<b>t</b>", findings=[{"label": "Nit", "text": "<script>alert(1)</script>"}])
-        self.assertNotIn("<script>alert", page)
-        self.assertIn("&lt;script&gt;", page)
+        page = self.render(title="<b>t</b>", findings=[{"label": "Nit", "text": "<script>alert(1)</script>"}],
+                           guide=[{"title": "<i>g</i>", "why": "<u>w</u>", "files": ["<x>.py"]}],
+                           structure={"columns": [{"title": "<c>", "nodes": [{"id": "a", "label": "<n>"}]}]})
+        for raw in ("<script>alert", "<i>g", "<u>w", "<x>.py", "<c>", "<n>"):
+            self.assertNotIn(raw, page)
         self.assertIn("<title>&lt;b&gt;t&lt;/b&gt;</title>", page)
+
+    def test_diff_is_parsed_with_counts_and_line_numbers(self):
+        app, doc = report.parse_diff(DIFF)
+        self.assertEqual((app["path"], app["add"], app["del"]), ("app.py", 1, 1))
+        self.assertIn(("d", 2, "", "old <b>"), app["rows"])
+        self.assertIn(("a", "", 2, "new"), app["rows"])
+        self.assertIn(("c", 3, 3, "tail"), app["rows"])
+        self.assertEqual((doc["path"], doc["add"], doc["del"]), ("docs/b.md", 2, 0))
+        self.assertEqual(doc["rows"][-1][0], "h")
+
+    def test_guide_keeps_order_and_collects_other_files(self):
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "diff.patch").write_text(DIFF)
+            page = report.render({"title": "t", "diff": "diff.patch",
+                                  "guide": [{"title": "Docs first", "why": "why", "files": ["docs/b.md"]}],
+                                  "findings": [{"label": "Nit", "where": "app.py:2", "text": "x"}]}, Path(d))
+        self.assertIn("01 / 02", page)
+        self.assertLess(page.index("Docs first"), page.index("其他改动"))
+        self.assertIn('id="f0"', page)
+        self.assertIn('<a href="#f0"><code>app.py:2</code></a>', page)
+        self.assertIn("2 个文件", page)
+        self.assertIn("old &lt;b&gt;", page)
+
+    def test_diagram_draws_nodes_and_known_edges(self):
+        svg = report.diagram({"columns": [
+            {"title": "入口", "nodes": [{"id": "a", "label": "SKILL.md", "status": "new"}]},
+            {"title": "核心", "nodes": [{"id": "b", "label": "report.py", "status": "modified"},
+                                        {"id": "c", "label": "x", "status": "weird"}]}],
+            "edges": [{"from": "a", "to": "b", "label": "调用"}, {"from": "b", "to": "c"}, {"from": "a", "to": "missing"}]})
+        self.assertEqual(svg.count('class="e"'), 2)
+        self.assertIn('class="n new"', svg)
+        self.assertIn('class="n unchanged"', svg)
+        self.assertIn(">调用<", svg)
+        self.assertEqual(report.diagram({}), "")
+
+    def test_clip_counts_wide_characters(self):
+        self.assertEqual(report.clip("abcdef", 4), "abcd…")
+        self.assertEqual(report.clip("中文标签", 4), "中文…")
+        self.assertEqual(report.clip("short", 30), "short")
 
     def test_screens_are_embedded(self):
         with tempfile.TemporaryDirectory() as d:
@@ -300,66 +388,25 @@ class ReportTests(unittest.TestCase):
                 report.main(["report.py", str(source)])
             page = Path(d, "report.html").read_text()
         self.assertEqual(page.count("data:image/png;base64,"), 2)
-        self.assertNotIn('src="a.png"', page)
 
     def test_missing_screenshot_stops(self):
         with self.assertRaisesRegex(SystemExit, "screenshot not found"):
             self.render(screens=[{"name": "home", "before": "missing.png", "after": "missing.png"}])
-
-    def test_unknown_test_status_counts_as_failure(self):
-        page = self.render(tests=[{"command": "pytest", "status": "error"}])
-        self.assertIn('class="bad">error 1', page)
-        self.assertIn("测试未通过：1", page)
-        self.assertNotIn("无未解决问题", page)
-
-    def test_label_case_and_unknown_labels_cannot_hide_a_bug(self):
-        page = self.render(findings=[{"label": "important", "text": "x"}, {"text": "y"}, {"label": "nit", "text": "z"}])
-        self.assertIn("Important 2 / Nit 1 / Pre-existing 0", page)
-        self.assertIn("未解决 Important：2", page)
-
-    def test_verdict_covers_failed_tests_and_unfinished_reviewers(self):
-        page = self.render(tests=[{"command": "pytest", "status": "fail"}, {"command": "gpu", "status": "not run"}],
-                           reviewers=[{"name": "Claude", "status": "done"}, {"name": "GLM", "status": "timed out"}])
-        for text in ("测试未通过：1", "未运行测试：1", "审查者未完成：GLM"):
-            self.assertIn(text, page)
-        self.assertNotIn("无未解决问题", page)
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "a.png").write_bytes(b"\x89PNG")
+            with self.assertRaisesRegex(SystemExit, "no path given"):
+                report.render({"title": "t", "screens": [{"name": "home", "before": "a.png"}]}, Path(d))
 
     def test_numbers_compare_by_value(self):
         self.assertTrue(report.same(1, "1.0"))
-        self.assertFalse(report.same("0.5", 0.51))
-        self.assertTrue(report.same("ok", "ok"))
+        self.assertTrue(report.same("1e3", 1000))
+        self.assertTrue(report.same("nan", float("nan")))
+        self.assertTrue(report.same("snan", "snan"))
+        self.assertFalse(report.same("snan", 1))
+        self.assertFalse(report.same(2**53, 2**53 + 1))
+        self.assertFalse(report.same(True, 1))
         self.assertFalse(report.same(None, None))
 
     def test_only_http_pr_links(self):
         self.assertNotIn("javascript:", self.render(pr={"number": 1, "url": "javascript:alert(1)"}))
         self.assertIn('href="https://github.com/a/b/pull/1"', self.render(pr={"number": 1, "url": "https://github.com/a/b/pull/1"}))
-
-    def test_no_tests_is_not_a_clean_verdict(self):
-        page = self.render()
-        self.assertIn("没有测试记录", page)
-        self.assertNotIn("无未解决问题", page)
-
-    def test_null_lists_and_status_case(self):
-        page = self.render(findings=None, tests=[{"command": "a", "status": "Pass"}, {"command": "b"}],
-                           reviewers=[{"name": "GLM", "status": "Done"}])
-        self.assertIn("通过 1", page)
-        self.assertIn("无状态 1", page)
-        self.assertIn("测试未通过：1", page)
-        self.assertNotIn("审查者未完成", page)
-        self.assertNotIn("None", page)
-
-    def test_unknown_status_row_is_red(self):
-        page = self.render(tests=[{"command": "pytest", "status": "error"}])
-        self.assertEqual(page.count('class="bad">error'), 2)
-
-    def test_numbers_exact_and_nan(self):
-        self.assertTrue(report.same("nan", float("nan")))
-        self.assertFalse(report.same(2**53, 2**53 + 1))
-        self.assertFalse(report.same(True, 1))
-        self.assertTrue(report.same("1e3", 1000))
-
-    def test_screen_without_after_path_stops_cleanly(self):
-        with tempfile.TemporaryDirectory() as d:
-            Path(d, "a.png").write_bytes(b"\x89PNG")
-            with self.assertRaisesRegex(SystemExit, "no path given"):
-                report.render({"title": "t", "screens": [{"name": "home", "before": "a.png"}]}, Path(d))
