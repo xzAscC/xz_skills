@@ -410,3 +410,45 @@ class ReportTests(unittest.TestCase):
     def test_only_http_pr_links(self):
         self.assertNotIn("javascript:", self.render(pr={"number": 1, "url": "javascript:alert(1)"}))
         self.assertIn('href="https://github.com/a/b/pull/1"', self.render(pr={"number": 1, "url": "https://github.com/a/b/pull/1"}))
+
+    def test_small_diffs_open_and_legend_lists_used_kinds(self):
+        with tempfile.TemporaryDirectory() as d:
+            big = "diff --git a/big.py b/big.py\n@@ -0,0 +1,61 @@\n" + "+x\n" * 61
+            Path(d, "diff.patch").write_text(DIFF + big)
+            page = report.render({"title": "t", "diff": "diff.patch", "structure": {"columns": [
+                {"title": "c", "nodes": [{"id": "a", "label": "a", "status": "new"}]}]}}, Path(d))
+        self.assertIn('id="f0" open', page)
+        self.assertIn('id="f2">', page)
+        legend = page[page.index('class="legend"'):]
+        self.assertIn("新增", legend[:200])
+        self.assertNotIn("外部", legend[:200])
+
+    def test_diff_edge_cases(self):
+        odd = "\n".join([
+            "diff --git a/foo b/x.txt b/foo b/x.txt", "--- a/foo b/x.txt\t", "+++ b/foo b/x.txt\t",
+            "@@ -1,2 +1,2 @@", "-one", "+tw\fo", " three",
+            'diff --git "a/\\344\\270\\255.txt" "b/\\344\\270\\255.txt"', "new file mode 100644",
+            '--- /dev/null', '+++ "b/\\344\\270\\255.txt"', "@@ -0,0 +1 @@", "+hi",
+            "diff --git a/img.png b/img.png", "index 1..2 100644", "Binary files a/img.png and b/img.png differ",
+            "diff --git a/run.sh b/run.sh", "old mode 100644", "new mode 100755",
+            "diff --git a/link b/link", "deleted file mode 100644", "--- a/link", "+++ /dev/null", "@@ -1 +0,0 @@", "-t",
+            "diff --git a/link b/link", "new file mode 120000", "--- /dev/null", "+++ b/link", "@@ -0,0 +1 @@", "+t", ""])
+        files = report.parse_diff(odd)
+        self.assertEqual([f["path"] for f in files], ["foo b/x.txt", "中.txt", "img.png", "run.sh", "link", "link"])
+        self.assertIn(("c", 2, 2, "three"), files[0]["rows"])
+        self.assertIn(("a", "", 1, "tw\fo"), files[0]["rows"])
+        self.assertEqual(files[2]["notes"], ["二进制文件"])
+        self.assertEqual(files[3]["notes"], ["原权限 100644", "新权限 100755"])
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "diff.patch").write_bytes(odd.encode() + b"diff --git a/l1.txt b/l1.txt\n@@ -0,0 +1 @@\n+caf\xe9\n")
+            page = report.render({"title": "t", "diff": "diff.patch", "guide": [
+                {"title": "A", "files": ["link", "run.sh"]}, {"title": "B", "files": ["link"]}]}, Path(d))
+        self.assertIn("6 个文件", page)
+        self.assertIn("caf�", page)
+        self.assertIn("新权限 100755", page)
+        self.assertEqual(page.count('id="f4"'), 1)
+        self.assertEqual(page.count('id="f5"'), 1)
+
+    def test_node_status_is_case_insensitive(self):
+        svg = report.diagram({"columns": [{"title": "c", "nodes": [{"id": "a", "label": "a", "status": "New"}]}]})
+        self.assertIn('class="n new"', svg)

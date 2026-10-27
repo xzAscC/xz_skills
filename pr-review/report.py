@@ -23,6 +23,7 @@ Any other test status counts as a failure; any reviewer status but "done" as unf
 """
 
 import base64
+import codecs
 import html
 import json
 import mimetypes
@@ -37,6 +38,8 @@ KINDS = {"research": "研究", "development": "开发"}
 STATUS = {"pass": "通过", "fail": "失败", "not run": "未运行"}
 NODES = {"new": "新增", "modified": "修改", "unchanged": "未改", "external": "外部"}
 HUNK = re.compile(r"@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@")
+NOTES = {"Binary files ": "二进制文件", "new file mode ": "新文件，权限 ", "deleted file mode ": "删除文件，权限 ",
+         "old mode ": "原权限 ", "new mode ": "新权限 ", "rename from ": "重命名自 "}
 
 CSS = """
 :root { color-scheme:light; --bg:#f7f7f8; --panel:#fff; --sunken:#f1f1f3; --line:#e4e4e8;
@@ -99,9 +102,8 @@ h3 { font-size:15px; font-weight:600; margin:0 0 6px; }
 .side { position:sticky; top:16px; align-self:start; }
 .step { color:var(--faint); font-size:12px; font-variant-numeric:tabular-nums; }
 .side p { color:var(--muted); margin:0 0 14px; }
-.files { list-style:none; padding:0; margin:0; border:1px solid var(--line); border-radius:8px; background:var(--panel); }
-.files li { display:flex; justify-content:space-between; gap:10px; padding:6px 10px; border-top:1px solid var(--line); font-size:12.5px; }
-.files li:first-child { border-top:0; }
+.note { padding:8px 12px; color:var(--muted); font-size:12.5px; }
+.file.plain { border:1px solid var(--line); border-radius:8px; background:var(--panel); padding:8px 12px; font-size:12.5px; }
 .fname { font-family:"JetBrains Mono", ui-monospace, monospace; } .fdir { color:var(--faint); margin-left:6px; }
 .count { white-space:nowrap; font-family:ui-monospace, monospace; font-size:12px; }
 .diffs { display:grid; gap:10px; min-width:0; align-content:start; }
@@ -113,7 +115,7 @@ details.file > summary::before { content:"▸"; color:var(--faint); margin-right
 details.file[open] > summary::before { content:"▾"; }
 details.file > summary .path { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 details.file[open] > summary { border-bottom:1px solid var(--line); }
-.diff { overflow-x:auto; font:12px/1.55 "JetBrains Mono", ui-monospace, monospace; }
+.diff { overflow:auto; max-height:560px; font:12px/1.55 "JetBrains Mono", ui-monospace, monospace; }
 .diff table { border-collapse:collapse; width:100%; }
 .diff td { padding:0 10px; white-space:pre; vertical-align:top; }
 .diff td.ln { color:var(--faint); text-align:right; user-select:none; width:1%; padding:0 6px; }
@@ -211,14 +213,25 @@ def image(root, name):
     return f"data:{mime};base64,{base64.b64encode(path.read_bytes()).decode()}"
 
 
+def git_path(raw, prefixed=True):
+    # git quotes unusual paths C-style ("b/\344\270\255.txt"); diff headers add an a/ or b/ prefix.
+    if raw.startswith('"') and raw.endswith('"'):
+        raw = codecs.escape_decode(raw[1:-1].encode())[0].decode("utf-8", "replace")
+    return raw[2:] if prefixed and raw[:2] in ("a/", "b/") else raw
+
+
 def parse_diff(text):
-    """Split a unified diff into files with +/- counts and rows (kind, old line, new line, text)."""
+    """Split a unified diff into files: path, +/- counts, header notes, rows (kind, old line, new line, text)."""
     files = []
-    for line in text.splitlines():
+    for line in text.split("\n"):  # not splitlines(): \f or \x85 inside a line is content
         if line.startswith("diff --git "):
-            files.append({"path": line.split(" b/", 1)[-1], "add": 0, "del": 0, "rows": [], "hunk": False})
+            rest = line[len("diff --git "):]
+            quoted = re.search(r'"(?:[^"\\]|\\.)*"$', rest) if rest.endswith('"') else None
+            # Unquoted "a/P b/P" holds P twice, so its second half is "b/P" even when P contains " b/".
+            path = git_path(quoted[0]) if quoted else git_path(rest[(len(rest) + 1) // 2:])
+            files.append({"path": path, "add": 0, "del": 0, "rows": [], "notes": [], "hunk": False})
             continue
-        if not files:
+        if not files or not line:
             continue
         f = files[-1]
         m = HUNK.match(line)
@@ -226,7 +239,14 @@ def parse_diff(text):
             f.update(hunk=True, old=int(m[1]), new=int(m[2]))
             f["rows"].append(("h", "", "", line))
         elif not f["hunk"]:
-            continue  # file header: index, ---/+++, mode and rename lines
+            # File header: the +++ and rename lines name the new path; notes describe non-text changes.
+            if line.startswith("+++ ") and line[4:] != "/dev/null":
+                f["path"] = git_path(line[4:].rstrip("\t"))
+            elif line.startswith("rename to "):
+                f["path"] = git_path(line[len("rename to "):], prefixed=False)
+            for prefix, note in NOTES.items():
+                if line.startswith(prefix):
+                    f["notes"].append(note if prefix == "Binary files " else note + line[len(prefix):])
         elif line.startswith("+"):
             f["add"] += 1
             f["rows"].append(("a", "", f["new"], line[1:]))
@@ -253,6 +273,22 @@ def file_name(path):
     return f'<span class="fname">{esc(name)}</span>' + (f'<span class="fdir">{esc(folder)}/</span>' if folder else "")
 
 
+def file_diff(f, anchor):
+    # Small diffs start open so the explanation sits next to the code; large ones stay folded.
+    rows = "".join(f'<tr class="{k}"><td class="ln">{o}</td><td class="ln">{n}</td><td>{esc(t)}</td></tr>'
+                   if k != "h" else f'<tr class="h"><td colspan="3">{esc(t)}</td></tr>' for k, o, n, t in f["rows"])
+    body = f'<div class="diff"><table>{rows}</table></div>' if rows else \
+        f'<div class="note">{esc("；".join(f["notes"]) or "没有文本改动")}</div>'
+    attrs = (f' id="{anchor}"' if anchor else "") + (" open" if f["add"] + f["del"] <= 60 else "")
+    return (f'<details class="file"{attrs}><summary><span class="path">{file_name(f["path"])}</span>'
+            f'{counts(f["add"], f["del"])}</summary>{body}</details>')
+
+
+def node_kind(node):
+    kind = str(node.get("status") or "").strip().lower()
+    return kind if kind in NODES else "unchanged"
+
+
 def where_link(where, anchors):
     path = str(where or "").split(":", 1)[0]
     text = f'<code>{esc(where)}</code>'
@@ -270,7 +306,7 @@ def diagram(structure):
         nodes.append(f'<text class="ct" x="{x}" y="14">{esc(column.get("title"))}</text>')
         for j, node in enumerate(column.get("nodes") or []):
             y = top + j * (h + vgap)
-            kind = node.get("status") if node.get("status") in NODES else "unchanged"
+            kind = node_kind(node)
             pos[node.get("id")] = (i, x, y)
             tag = f'<text class="t" x="{x + w - 10}" y="{y + 17}" text-anchor="end">{NODES[kind]}</text>' \
                 if kind in ("new", "modified") else ""
@@ -327,8 +363,13 @@ def render(data, root):
     findings = sorted(data.get("findings") or [], key=lambda f: (not unresolved(f), LABELS.index(label(f))))
     tests = data.get("tests") or []
     reviewers = data.get("reviewers") or []
-    diff = parse_diff((root / data["diff"]).read_text(encoding="utf-8")) if data.get("diff") else []
-    anchors = {f["path"]: f"f{i}" for i, f in enumerate(diff)}
+    # A diff may hold files in other encodings; replace undecodable bytes instead of failing.
+    diff = parse_diff((root / data["diff"]).read_bytes().decode("utf-8", "replace")) if data.get("diff") else []
+    by_path = {}  # one path can have two diffs, e.g. a file turned into a symlink
+    for i, f in enumerate(diff):
+        f["id"] = f"f{i}"
+        by_path.setdefault(f["path"], []).append(f)
+    anchors = {path: fs[0]["id"] for path, fs in by_path.items()}
     statuses = [status(t) for t in tests]
 
     pr = data.get("pr") or {}
@@ -342,7 +383,7 @@ def render(data, root):
     chips = [f'<span class="chip">类型 <b>{esc(KINDS.get(data.get("kind"), data.get("kind") or "—"))}</b></span>',
              f'<span class="chip">风险 <b>{esc(TIERS.get(data.get("tier"), data.get("tier") or "—"))}</b></span>']
     if diff:
-        chips.append(f'<span class="chip">{len(diff)} 个文件 {counts(sum(f["add"] for f in diff), sum(f["del"] for f in diff))}</span>')
+        chips.append(f'<span class="chip">{len(by_path)} 个文件 {counts(sum(f["add"] for f in diff), sum(f["del"] for f in diff))}</span>')
     chips.append(f'<span class="chip">测试 <b>{esc(test_text or "没有记录")}</b></span>')
     chips.append(f'<span class="chip">修复轮数 <b>{esc(data.get("rounds", 0))} / 3</b></span>')
     out = [f'<div class="crumb">{" · ".join(crumb)}</div>', f"<h1>{esc(data['title'])}</h1>",
@@ -377,35 +418,38 @@ def render(data, root):
     if structure.get("columns") or data.get("stack"):
         out.append("<h2>结构与技术栈</h2>")
         if structure.get("columns"):
+            used = {node_kind(n) for c in structure["columns"] for n in c.get("nodes") or []}
             out.append(f'<div class="panel"><div class="diagram">{diagram(structure)}</div><div class="legend">'
-                       + "".join(f'<span><i class="{k}"></i>{v}</span>' for k, v in NODES.items()) + "</div></div>")
+                       + "".join(f'<span><i class="{k}"></i>{v}</span>' for k, v in NODES.items() if k in used)
+                       + "</div></div>")
         if data.get("stack"):
             out.append('<div class="chips stack">' + "".join(
                 f'<span class="chip"><b>{esc(s.get("name"))}</b>{esc(s.get("note"))}</span>' for s in data["stack"]) + "</div>")
 
     sections = [dict(s) for s in data.get("guide") or []]
     named = {p for s in sections for p in s.get("files") or []}
-    rest = [f["path"] for f in diff if f["path"] not in named]
+    rest = [p for p in by_path if p not in named]
     if rest:
         sections.append({"title": "其他改动" if sections else "全部改动",
                          "why": "导读没有单独解释的文件。" if sections else "", "files": rest})
     if sections:
         out.append('<h2>改动导读</h2><div class="guide">')
-        by_path = {f["path"]: f for f in diff}
+        placed = set()  # a file named in two sections keeps its id on the first one only
         for n, s in enumerate(sections, 1):
             paths = s.get("files") or []
-            listed = "".join(
-                f'<li><a href="#{anchors[p]}">{file_name(p)}</a>{counts(by_path[p]["add"], by_path[p]["del"])}</li>'
-                if p in by_path else f"<li>{file_name(p)}</li>" for p in paths)
-            diffs = "".join(
-                f'<details class="file" id="{anchors[p]}"><summary><span class="path">{file_name(p)}</span>'
-                f'{counts(by_path[p]["add"], by_path[p]["del"])}</summary><div class="diff"><table>'
-                + "".join(f'<tr class="{k}"><td class="ln">{o}</td><td class="ln">{w}</td><td>{esc(t)}</td></tr>'
-                          if k != "h" else f'<tr class="h"><td colspan="3">{esc(t)}</td></tr>'
-                          for k, o, w, t in by_path[p]["rows"])
-                + "</table></div></details>" for p in paths if p in by_path)
+            shown = [f for p in paths for f in by_path.get(p, [])]
+            total = f"{len(paths)} 个文件" + (
+                " " + counts(sum(f["add"] for f in shown), sum(f["del"] for f in shown)) if shown else "")
+            parts = []
+            for p in paths:
+                for f in by_path.get(p, []):
+                    parts.append(file_diff(f, None if f["id"] in placed else f["id"]))
+                    placed.add(f["id"])
+                if p not in by_path:
+                    parts.append(f'<div class="file plain">{file_name(p)}</div>')
+            diffs = "".join(parts)
             out.append(f'<section class="section"><div class="side"><div class="step">{n:02d} / {len(sections):02d}</div>'
-                       f'<h3>{esc(s.get("title"))}</h3><p>{esc(s.get("why"))}</p><ul class="files">{listed}</ul></div>'
+                       f'<h3>{esc(s.get("title"))}</h3><p>{esc(s.get("why"))}</p><div class="muted">{total}</div></div>'
                        f'<div class="diffs">{diffs}</div></section>')
         out.append("</div>")
 
