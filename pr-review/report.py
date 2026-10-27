@@ -42,7 +42,7 @@ NOTES = {"Binary files ": "二进制文件", "new file mode ": "新文件，权�
          "old mode ": "原权限 ", "new mode ": "新权限 ", "rename from ": "重命名自 ", "copy from ": "复制自 "}
 
 # Light is parchment with serif prose, after claude.ai; dark is Linear's neutral grey, all sans.
-# Dark applies when the system asks for it, unless the page toggle (data-theme on <html>) overrides.
+# Light is the default; the page toggle sets data-theme on <html> to dark, or to auto to follow the system.
 LIGHT = """color-scheme:light; --bg:#f0eee6; --panel:#faf9f5; --sunken:#e8e6dc; --line:#dcd8cb;
   --fg:#141413; --muted:#5e5d59; --faint:#8e8b82; --accent:#c96442; --good:#5a7d34; --bad:#b4432e;
   --warn:#9c6418; --good-bg:#e5ead6; --bad-bg:#f4dfd6; --warn-bg:#f2e5c9; --accent-bg:#f5e4da;
@@ -55,7 +55,7 @@ FONTS = ("https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,40
          "&family=Noto+Serif+SC:wght@400;600&display=swap")
 CSS = f"""
 :root {{ --sans:Inter, system-ui, "Noto Sans CJK SC", sans-serif; {LIGHT} }}
-@media (prefers-color-scheme: dark) {{ :root:not([data-theme="light"]) {{ {DARK} }} }}
+@media (prefers-color-scheme: dark) {{ :root[data-theme="auto"] {{ {DARK} }} }}
 :root[data-theme="dark"] {{ {DARK} }}
 """ + """
 * { box-sizing:border-box; }
@@ -161,11 +161,11 @@ pre.out { white-space:pre-wrap; overflow-wrap:anywhere; background:var(--sunken)
 # which shows small differences better than side by side. A file link opens its diff.
 JS = """
 const root = document.documentElement, themes = document.querySelectorAll('[data-theme-set]');
-const markTheme = () => themes.forEach(b => b.classList.toggle('on', (root.dataset.theme || 'auto') === b.dataset.themeSet));
+const markTheme = () => themes.forEach(b => b.classList.toggle('on', (root.dataset.theme || 'light') === b.dataset.themeSet));
 themes.forEach(b => b.onclick = () => {
   const t = b.dataset.themeSet;
-  if (t === 'auto') delete root.dataset.theme; else root.dataset.theme = t;
-  try { t === 'auto' ? localStorage.removeItem('pr-review-theme') : localStorage.setItem('pr-review-theme', t); } catch (e) {}
+  if (t === 'light') delete root.dataset.theme; else root.dataset.theme = t;
+  try { t === 'light' ? localStorage.removeItem('pr-review-theme') : localStorage.setItem('pr-review-theme', t); } catch (e) {}
   markTheme();
 });
 markTheme();
@@ -411,7 +411,7 @@ def render(data, root):
     chips.append(f'<span class="chip">测试 <b>{esc(test_text or "没有记录")}</b></span>')
     chips.append(f'<span class="chip">修复轮数 <b>{esc(data.get("rounds", 0))} / 3</b></span>')
     toggle = ('<span class="seg" aria-label="主题">' + "".join(
-        f'<button data-theme-set="{k}">{v}</button>' for k, v in (("auto", "自动"), ("light", "亮"), ("dark", "暗")))
+        f'<button data-theme-set="{k}">{v}</button>' for k, v in (("light", "亮"), ("dark", "暗"), ("auto", "自动")))
         + "</span>")
     out = [f'<div class="top"><div class="crumb">{" · ".join(crumb)}</div>{toggle}</div>', f"<h1>{esc(data['title'])}</h1>",
            f'<div class="chips">{"".join(chips)}</div>']

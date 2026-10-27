@@ -468,6 +468,6 @@ class ReportTests(unittest.TestCase):
         for theme in ("auto", "light", "dark"):
             self.assertIn(f'data-theme-set="{theme}"', page)
         self.assertIn(':root[data-theme="dark"]', page)
-        self.assertIn(':root:not([data-theme="light"])', page)
+        self.assertIn('@media (prefers-color-scheme: dark) { :root[data-theme="auto"]', page)
         self.assertIn("--bg:#f0eee6", page)
         self.assertLess(page.index("pr-review-theme"), page.index("<style>"))
