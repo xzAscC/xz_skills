@@ -49,7 +49,9 @@ Adapted from obra/superpowers (`using-git-worktrees`,
      `git merge <branch>`, run the tests on the merged result. If they fail,
      stop and leave branch and worktree in place. If they pass, remove the
      worktree, then `git branch -d <branch>`.
-   - **PR**: `git push -u origin <branch>`, open the PR with the forge CLI
+   - **PR**: when the `pr-review` skill is installed, follow it instead: it
+     opens a draft PR, reviews it and writes a report for the user. Otherwise
+     `git push -u origin <branch>`, open the PR with the forge CLI
      (for example `gh pr create`) using the repository's PR template, report
      the URL. Keep the worktree for review fixes.
    - **Keep**: report the branch name and worktree path.

@@ -14,6 +14,7 @@ Personal agent skills (the `SKILL.md` format used by Claude Code, opencode, and 
 | [osc-run](osc-run/SKILL.md) | Runs research experiments on OSC through SLURM: preflight checks, Pitzer smoke test, full submission, monitoring, failure fixes |
 | [bib-lookup](bib-lookup/SKILL.md) | Gets BibTeX through the `aibib` CLI (AI Bib Helper): DBLP search, official publisher export, DOI or DBLP metadata, never from memory |
 | [git-workflow](git-workflow/SKILL.md) | When to commit, safety gates, grouping into logical commits, commit messages (repo convention or the seven rules), and starting or finishing branches and worktrees |
+| [pr-review](pr-review/SKILL.md) | Reviews a change as a draft PR before the user merges: test evidence, risk tier, Claude review plus a second GLM review through pi, at most three fix rounds, before/after screenshots, local HTML report |
 
 ## Install
 
@@ -22,7 +23,7 @@ Clone the repo, then link each skill into the directories your agents read:
 ```bash
 git clone https://github.com/xzAscC/xz_skills.git ~/xz_skills
 mkdir -p ~/.agents/skills ~/.claude/skills
-for skill in anki-vocab paper-figures zhihu-answer-writing zh-controlled-writing en-controlled-writing x-post-writing epub-making osc-run bib-lookup git-workflow; do
+for skill in anki-vocab paper-figures zhihu-answer-writing zh-controlled-writing en-controlled-writing x-post-writing epub-making osc-run bib-lookup git-workflow pr-review; do
     ln -sT ~/xz_skills/"$skill" ~/.agents/skills/"$skill"
     ln -sT ../../.agents/skills/"$skill" ~/.claude/skills/"$skill"
 done
@@ -37,5 +38,6 @@ Its optional sentence audio uses `edge-tts` or `uvx` and network access.
 `paper-figures/check_figs.py` needs Poppler's `pdffonts` and `pdfinfo`.
 `bib-lookup` needs the [`aibib`](https://github.com/xzAscC/AI-Bib-Helper) CLI.
 `epub-making` needs `pandoc` and `epubcheck`; its `cover.py` needs `numpy` and `Pillow`.
+`pr-review` needs `gh`, the `pi` coding agent with a Z.ai login for its GLM reviewer, and `google-chrome-stable` for screenshots.
 
 Run the offline regression checks with `python3 -m unittest discover -s tests -v`.

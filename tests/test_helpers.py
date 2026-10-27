@@ -254,3 +254,220 @@ class EpubTests(unittest.TestCase):
         self.assertTrue(epub.book_id(a).startswith("urn:uuid:"))
         self.assertNotEqual(epub.book_id(a), epub.book_id(SimpleNamespace(id=None, author="作者", title="书名2")))
         self.assertEqual(epub.book_id(SimpleNamespace(id="urn:isbn:1", author="", title="")), "urn:isbn:1")
+
+
+report = load("pr_report", "pr-review/report.py")
+
+DIFF = """diff --git a/app.py b/app.py
+index 1..2 100644
+--- a/app.py
++++ b/app.py
+@@ -1,3 +1,3 @@
+ keep
+-old <b>
++new
+ tail
+diff --git a/docs/a.md b/docs/b.md
+similarity index 90%
+rename from docs/a.md
+rename to docs/b.md
+--- a/docs/a.md
++++ b/docs/b.md
+@@ -10,0 +11,2 @@
++one
++two
+\\ No newline at end of file
+"""
+
+
+class ReportTests(unittest.TestCase):
+    def render(self, **data):
+        return report.render({"title": "t", **data}, ROOT)
+
+    def test_attention_lists_blocking_items_first(self):
+        page = self.render(findings=[
+            {"label": "Nit", "text": "nit-open", "resolution": "open: optional"},
+            {"label": "Important", "text": "imp-fixed", "resolution": "fixed abc123"},
+            {"label": "Important", "text": "imp-open", "where": "a.py:3"},
+            {"label": "Pre-existing", "text": "pre-open"},
+        ], tests=[{"command": "pytest", "status": "fail"}])
+        self.assertIn("需要处理 2 项", page)
+        verdict = page[page.index("verdict"):page.index("</section>")]
+        self.assertLess(verdict.index("imp-open"), verdict.index("pytest"))
+        self.assertLess(verdict.index("pytest"), verdict.index("nit-open"))
+        self.assertNotIn("imp-fixed", verdict)
+
+    def test_clean_report_says_so(self):
+        page = self.render(tests=[{"command": "pytest", "status": "pass"}], reviewers=[{"name": "c", "status": "done"}])
+        self.assertIn("可以合并", page)
+        self.assertIn("无未解决问题。", page)
+        self.assertIn("没有审查意见", page)
+
+    def test_open_nit_does_not_block(self):
+        page = self.render(tests=[{"command": "pytest", "status": "pass"}],
+                           findings=[{"label": "Nit", "text": "x", "resolution": "open"}])
+        self.assertIn("可以合并", page)
+        self.assertIn("另有 1 条可选意见", page)
+
+    def test_unverified_items_warn(self):
+        page = self.render(tests=[{"command": "pytest -m gpu", "status": "not run", "reason": "no GPU"}],
+                           reviewers=[{"status": "running"}])
+        self.assertIn("合并前请确认 2 项", page)
+        self.assertIn("未命名审查者", page)
+        self.assertIn("没有测试记录", self.render())
+
+    def test_unknown_status_and_labels_cannot_hide_problems(self):
+        page = self.render(tests=[{"command": "pytest", "status": "error"}],
+                           findings=[{"label": "important", "text": "x"}, {"text": "y"}, {"label": "nit", "text": "z", "resolution": "fixed"}])
+        self.assertIn("需要处理 3 项", page)
+        self.assertIn("Important 2 · Nit 1 · Pre-existing 0", page)
+        self.assertIn('class="sev bad">error', page)
+
+    def test_null_lists_and_status_case(self):
+        page = self.render(findings=None, tests=[{"command": "a", "status": "Pass"}, {"command": "b"}],
+                           reviewers=[{"name": "GLM", "status": "Done"}])
+        self.assertIn("通过 1", page)
+        self.assertIn("无状态 1", page)
+        self.assertNotIn("审查未完成", page)
+        self.assertNotIn("None", page)
+
+    def test_text_is_escaped(self):
+        page = self.render(title="<b>t</b>", findings=[{"label": "Nit", "text": "<script>alert(1)</script>"}],
+                           guide=[{"title": "<i>g</i>", "why": "<u>w</u>", "files": ["<x>.py"]}],
+                           structure={"columns": [{"title": "<c>", "nodes": [{"id": "a", "label": "<n>"}]}]})
+        for raw in ("<script>alert", "<i>g", "<u>w", "<x>.py", "<c>", "<n>"):
+            self.assertNotIn(raw, page)
+        self.assertIn("<title>&lt;b&gt;t&lt;/b&gt;</title>", page)
+
+    def test_diff_is_parsed_with_counts_and_line_numbers(self):
+        app, doc = report.parse_diff(DIFF)
+        self.assertEqual((app["path"], app["add"], app["del"]), ("app.py", 1, 1))
+        self.assertIn(("d", 2, "", "old <b>"), app["rows"])
+        self.assertIn(("a", "", 2, "new"), app["rows"])
+        self.assertIn(("c", 3, 3, "tail"), app["rows"])
+        self.assertEqual((doc["path"], doc["add"], doc["del"]), ("docs/b.md", 2, 0))
+        self.assertEqual(doc["rows"][-1][0], "h")
+
+    def test_guide_keeps_order_and_collects_other_files(self):
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "diff.patch").write_text(DIFF)
+            page = report.render({"title": "t", "diff": "diff.patch",
+                                  "guide": [{"title": "Docs first", "why": "why", "files": ["docs/b.md"]}],
+                                  "findings": [{"label": "Nit", "where": "app.py:2", "text": "x"}]}, Path(d))
+        self.assertIn("01 / 02", page)
+        self.assertLess(page.index("Docs first"), page.index("其他改动"))
+        self.assertIn('id="f0"', page)
+        self.assertIn('<a href="#f0"><code>app.py:2</code></a>', page)
+        self.assertIn("2 个文件", page)
+        self.assertIn("old &lt;b&gt;", page)
+
+    def test_diagram_draws_nodes_and_known_edges(self):
+        svg = report.diagram({"columns": [
+            {"title": "入口", "nodes": [{"id": "a", "label": "SKILL.md", "status": "new"}]},
+            {"title": "核心", "nodes": [{"id": "b", "label": "report.py", "status": "modified"},
+                                        {"id": "c", "label": "x", "status": "weird"}]}],
+            "edges": [{"from": "a", "to": "b", "label": "调用"}, {"from": "b", "to": "c"}, {"from": "a", "to": "missing"}]})
+        self.assertEqual(svg.count('class="e"'), 2)
+        self.assertIn('class="n new"', svg)
+        self.assertIn('class="n unchanged"', svg)
+        self.assertIn(">调用<", svg)
+        self.assertEqual(report.diagram({}), "")
+
+    def test_clip_counts_wide_characters(self):
+        self.assertEqual(report.clip("abcdef", 4), "abcd…")
+        self.assertEqual(report.clip("中文标签", 4), "中文…")
+        self.assertEqual(report.clip("short", 30), "short")
+
+    def test_screens_are_embedded(self):
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "a.png").write_bytes(b"\x89PNG before")
+            Path(d, "b.png").write_bytes(b"\x89PNG after")
+            source = Path(d, "report.json")
+            source.write_text('{"title": "t", "screens": [{"name": "home", "before": "a.png", "after": "b.png"}]}')
+            with contextlib.redirect_stdout(io.StringIO()):
+                report.main(["report.py", str(source)])
+            page = Path(d, "report.html").read_text()
+        self.assertEqual(page.count("data:image/png;base64,"), 2)
+
+    def test_missing_screenshot_stops(self):
+        with self.assertRaisesRegex(SystemExit, "screenshot not found"):
+            self.render(screens=[{"name": "home", "before": "missing.png", "after": "missing.png"}])
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "a.png").write_bytes(b"\x89PNG")
+            with self.assertRaisesRegex(SystemExit, "no path given"):
+                report.render({"title": "t", "screens": [{"name": "home", "before": "a.png"}]}, Path(d))
+
+    def test_numbers_compare_by_value(self):
+        self.assertTrue(report.same(1, "1.0"))
+        self.assertTrue(report.same("1e3", 1000))
+        self.assertTrue(report.same("nan", float("nan")))
+        self.assertTrue(report.same("snan", "snan"))
+        self.assertFalse(report.same("snan", 1))
+        self.assertFalse(report.same(2**53, 2**53 + 1))
+        self.assertFalse(report.same(True, 1))
+        self.assertFalse(report.same(None, None))
+
+    def test_only_http_pr_links(self):
+        self.assertNotIn("javascript:", self.render(pr={"number": 1, "url": "javascript:alert(1)"}))
+        self.assertIn('href="https://github.com/a/b/pull/1"', self.render(pr={"number": 1, "url": "https://github.com/a/b/pull/1"}))
+
+    def test_small_diffs_open_and_legend_lists_used_kinds(self):
+        with tempfile.TemporaryDirectory() as d:
+            big = "diff --git a/big.py b/big.py\n@@ -0,0 +1,61 @@\n" + "+x\n" * 61
+            Path(d, "diff.patch").write_text(DIFF + big)
+            page = report.render({"title": "t", "diff": "diff.patch", "structure": {"columns": [
+                {"title": "c", "nodes": [{"id": "a", "label": "a", "status": "new"}]}]}}, Path(d))
+        self.assertIn('id="f0" open', page)
+        self.assertIn('id="f2">', page)
+        legend = page[page.index('class="legend"'):]
+        self.assertIn("新增", legend[:200])
+        self.assertNotIn("外部", legend[:200])
+
+    def test_diff_edge_cases(self):
+        odd = "\n".join([
+            "diff --git a/foo b/x.txt b/foo b/x.txt", "--- a/foo b/x.txt\t", "+++ b/foo b/x.txt\t",
+            "@@ -1,2 +1,2 @@", "-one", "+tw\fo", " three",
+            'diff --git "a/\\344\\270\\255.txt" "b/\\344\\270\\255.txt"', "new file mode 100644",
+            '--- /dev/null', '+++ "b/\\344\\270\\255.txt"', "@@ -0,0 +1 @@", "+hi",
+            "diff --git a/img.png b/img.png", "index 1..2 100644", "Binary files a/img.png and b/img.png differ",
+            "diff --git a/run.sh b/run.sh", "old mode 100644", "new mode 100755",
+            "diff --git a/link b/link", "deleted file mode 100644", "--- a/link", "+++ /dev/null", "@@ -1 +0,0 @@", "-t",
+            "diff --git a/link b/link", "new file mode 120000", "--- /dev/null", "+++ b/link", "@@ -0,0 +1 @@", "+t", ""])
+        files = report.parse_diff(odd)
+        self.assertEqual([f["path"] for f in files], ["foo b/x.txt", "中.txt", "img.png", "run.sh", "link", "link"])
+        self.assertIn(("c", 2, 2, "three"), files[0]["rows"])
+        self.assertIn(("a", "", 1, "tw\fo"), files[0]["rows"])
+        self.assertEqual(files[2]["notes"], ["二进制文件"])
+        self.assertEqual(files[3]["notes"], ["原权限 100644", "新权限 100755"])
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "diff.patch").write_bytes(odd.encode() + b"diff --git a/l1.txt b/l1.txt\n@@ -0,0 +1 @@\n+caf\xe9\n")
+            page = report.render({"title": "t", "diff": "diff.patch", "guide": [
+                {"title": "A", "files": ["link", "run.sh"]}, {"title": "B", "files": ["link"]}]}, Path(d))
+        self.assertIn("6 个文件", page)
+        self.assertIn("caf�", page)
+        self.assertIn("新权限 100755", page)
+        self.assertEqual(page.count('id="f4"'), 1)
+        self.assertEqual(page.count('id="f5"'), 1)
+
+    def test_node_status_is_case_insensitive(self):
+        svg = report.diagram({"columns": [{"title": "c", "nodes": [{"id": "a", "label": "a", "status": "New"}]}]})
+        self.assertIn('class="n new"', svg)
+
+    def test_copies_and_blank_context_lines(self):
+        files = report.parse_diff("\n".join([
+            "diff --git a/a.py b/src_copy_longer_name.py", "similarity index 100%",
+            "copy from a.py", "copy to src_copy_longer_name.py",
+            "diff --git a/b.txt b/b.txt", "--- a/b.txt", "+++ b/b.txt", "@@ -1,3 +1,3 @@", " x", "", "-y", "+z", ""]))
+        self.assertEqual(files[0]["path"], "src_copy_longer_name.py")
+        self.assertEqual(files[0]["notes"], ["复制自 a.py"])
+        self.assertEqual(files[1]["rows"][1:], [("c", 1, 1, "x"), ("c", 2, 2, ""), ("d", 3, "", "y"), ("a", "", 3, "z")])
+        self.assertEqual(report.parse_diff(""), [])
+
+    def test_theme_toggle_and_both_palettes(self):
+        page = self.render()
+        for theme in ("auto", "light", "dark"):
+            self.assertIn(f'data-theme-set="{theme}"', page)
+        self.assertIn(':root[data-theme="dark"]', page)
+        self.assertIn('@media (prefers-color-scheme: dark) { :root[data-theme="auto"]', page)
+        self.assertIn("--bg:#f0eee6", page)
+        self.assertLess(page.index("pr-review-theme"), page.index("<style>"))
