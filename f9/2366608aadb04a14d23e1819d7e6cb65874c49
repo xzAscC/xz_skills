@@ -1,0 +1,31 @@
+pr-review/report.py
+  s_42a176c3481f9e::t_2008366d220f75 168
+  s_42a176c3481f9e::t_6ffb3c7c8879d3 203
+  s_42a176c3481f9e::t_ce308fe51d343b 8,12
+  s_42a176c3481f9e::t_f75fcc85af4780 134
+  s_42a176c3481f9e::t_589566c4f71d10 105,107,109-120,123-125
+  s_42a176c3481f9e::t_a98d407b33ad6d 144
+  s_42a176c3481f9e::t_f7b094a11db37e 72-76,79-88
+pr-review/SKILL.md
+  s_42a176c3481f9e::t_2804ce0b8d17c3 17
+  s_42a176c3481f9e::t_8a0e78f0231304 21
+  s_42a176c3481f9e::t_4140afdd49d067 12
+tests/test_helpers.py
+  s_42a176c3481f9e::t_e148a621d6404c 308-335
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "f92366608aadb04a14d23e1819d7e6cb65874c49",
+  "prompts": {},
+  "sessions": {
+    "s_42a176c3481f9e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "91dd1d25-404f-41c5-ba38-6403fda91798",
+        "model": "unknown"
+      },
+      "human_author": "xzascc <xudongzhu3944@gmail.com>"
+    }
+  }
+}
