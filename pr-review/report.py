@@ -5,10 +5,11 @@ report.json fields (all optional except title; paths relative to the JSON file):
   title, repo, branch, base, pr {number, url}, kind (research|development),
   tier (low|medium|high), tier_reason, summary (blank line = new paragraph),
   findings [{label (Important|Nit|Pre-existing), source, where, text, resolution}],
-  rejected [{source, where, text, reason}], reviewers [{name, status, note}],
+  rejected [{source, where, text, reason}], reviewers [{name, status (done|...), note}],
   screens [{name, before, after}], numbers [{name, before, after}],
   tests [{command, status (pass|fail|not run), reason, output}], rounds, revert
 A finding is open when it is Important and its resolution is empty or starts with "open".
+Any other test status counts as a failure; any reviewer status but "done" as unfinished.
 """
 
 import base64
@@ -68,9 +69,23 @@ def esc(value):
     return html.escape("" if value is None else str(value))
 
 
+def label(finding):
+    # Case-insensitive; a missing or unknown label counts as Important so it cannot hide a bug.
+    return {name.lower(): name for name in LABELS}.get(str(finding.get("label") or "").strip().lower(), "Important")
+
+
 def is_open(finding):
     resolution = (finding.get("resolution") or "").strip().lower()
-    return finding.get("label") == "Important" and (not resolution or resolution.startswith("open"))
+    return label(finding) == "Important" and (not resolution or resolution.startswith("open"))
+
+
+def same(before, after):
+    if before is None or after is None:
+        return False
+    try:
+        return float(before) == float(after)
+    except (TypeError, ValueError):
+        return str(before) == str(after)
 
 
 def image(path):
@@ -87,18 +102,27 @@ def table(head, rows):
 
 
 def render(data, root):
-    findings = sorted(data.get("findings", []),
-                      key=lambda f: LABELS.index(f["label"]) if f.get("label") in LABELS else len(LABELS))
+    findings = sorted(data.get("findings", []), key=lambda f: LABELS.index(label(f)))
     tests = data.get("tests", [])
+    statuses = [t.get("status") for t in tests]
     opened = sum(map(is_open, findings))
-    counts = " / ".join(f"{label} {sum(f.get('label') == label for f in findings)}" for label in LABELS)
-    test_counts = {s: sum(t.get("status") == s for t in tests) for s in STATUS}
-    test_text = "，".join(f"{STATUS[s]} {n}" for s, n in test_counts.items() if n) or "没有记录"
-    test_class = "bad" if test_counts["fail"] else "warn" if test_counts["not run"] or not tests else "good"
-    open_text = f'<b class="bad">未解决 Important：{opened}</b>' if opened else '<b class="good">无未解决问题</b>'
+    counts = " / ".join(f"{name} {sum(label(f) == name for f in findings)}" for name in LABELS)
+    test_text = "，".join(f"{STATUS.get(s, s)} {statuses.count(s)}" for s in dict.fromkeys(statuses)) or "没有记录"
+    failed = sum(s not in ("pass", "not run") for s in statuses)
+    not_run = statuses.count("not run")
+    test_class = "bad" if failed else "warn" if not_run or not tests else "good"
+    unfinished = [str(r.get("name")) for r in data.get("reviewers", []) if r.get("status") != "done"]
+    # The verdict lists every reason not to merge yet, not only open findings.
+    problems = ([(f"未解决 Important：{opened}", "bad")] if opened else []) \
+        + ([(f"测试未通过：{failed}", "bad")] if failed else []) \
+        + ([(f"未运行测试：{not_run}", "warn")] if not_run else []) \
+        + ([("审查者未完成：" + "、".join(unfinished), "warn")] if unfinished else [])
+    verdict = "".join(f'<b class="{c}">{esc(t)}</b>' for t, c in problems) or '<b class="good">无未解决问题</b>'
 
     pr = data.get("pr") or {}
-    pr_link = f' · <a href="{esc(pr.get("url"))}">PR #{esc(pr.get("number"))}</a>' if pr.get("url") else ""
+    url = str(pr.get("url") or "")
+    pr_link = (f' · <a href="{esc(url)}">PR #{esc(pr.get("number"))}</a>'
+               if url.startswith(("https://", "http://")) else "")
     out = [f"<h1>{esc(data['title'])}</h1>",
            f'<div class="meta">{esc(data.get("repo"))} · <code>{esc(data.get("branch"))}</code> → '
            f'<code>{esc(data.get("base"))}</code>{pr_link}</div>',
@@ -107,7 +131,7 @@ def render(data, root):
            f'<div>风险档<b>{esc(TIERS.get(data.get("tier"), data.get("tier") or "—"))}</b></div>',
            f'<div>测试<b class="{test_class}">{esc(test_text)}</b></div>',
            f"<div>审查意见<b>{esc(counts)}</b></div>",
-           f"<div>结论{open_text}</div>",
+           f"<div>结论{verdict}</div>",
            f'<div>修复轮数<b>{esc(data.get("rounds", 0))} / 3</b></div>',
            "</div>"]
     out += [f"<p>{esc(p)}</p>" for p in (data.get("summary") or "").split("\n\n") if p.strip()]
@@ -117,7 +141,7 @@ def render(data, root):
     out.append("<h2>审查意见</h2>")
     if findings:
         out.append(table(["标签", "来源", "位置", "问题", "处理"], [
-            [f'<span class="tag">{esc(f.get("label"))}</span>', esc(f.get("source")),
+            [f'<span class="tag">{esc(label(f))}</span>', esc(f.get("source")),
              f'<code>{esc(f.get("where"))}</code>', esc(f.get("text")),
              '<span class="bad">未解决</span>' if is_open(f) else esc(f.get("resolution"))]
             for f in findings]))
@@ -141,7 +165,7 @@ def render(data, root):
         out.append("<h2>数值对比</h2>")
         out.append(table(["指标", "改动前", "改动后"], [
             [esc(n.get("name")), esc(n.get("before")),
-             f'<span class="{"good" if str(n.get("before")) == str(n.get("after")) else "warn"}">{esc(n.get("after"))}</span>']
+             f'<span class="{"good" if same(n.get("before"), n.get("after")) else "warn"}">{esc(n.get("after"))}</span>']
             for n in data["numbers"]]))
 
     out.append("<h2>测试</h2>")
@@ -176,7 +200,7 @@ def main(argv):
         raise SystemExit("usage: report.py report.json")
     source = Path(argv[1])
     target = source.with_name("report.html")
-    target.write_text(render(json.loads(source.read_text()), source.parent), encoding="utf-8")
+    target.write_text(render(json.loads(source.read_text(encoding="utf-8")), source.parent), encoding="utf-8")
     print(target)
 
 

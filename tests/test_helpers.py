@@ -305,3 +305,31 @@ class ReportTests(unittest.TestCase):
     def test_missing_screenshot_stops(self):
         with self.assertRaisesRegex(SystemExit, "screenshot not found"):
             self.render(screens=[{"name": "home", "before": "missing.png", "after": "missing.png"}])
+
+    def test_unknown_test_status_counts_as_failure(self):
+        page = self.render(tests=[{"command": "pytest", "status": "error"}])
+        self.assertIn('class="bad">error 1', page)
+        self.assertIn("测试未通过：1", page)
+        self.assertNotIn("无未解决问题", page)
+
+    def test_label_case_and_unknown_labels_cannot_hide_a_bug(self):
+        page = self.render(findings=[{"label": "important", "text": "x"}, {"text": "y"}, {"label": "nit", "text": "z"}])
+        self.assertIn("Important 2 / Nit 1 / Pre-existing 0", page)
+        self.assertIn("未解决 Important：2", page)
+
+    def test_verdict_covers_failed_tests_and_unfinished_reviewers(self):
+        page = self.render(tests=[{"command": "pytest", "status": "fail"}, {"command": "gpu", "status": "not run"}],
+                           reviewers=[{"name": "Claude", "status": "done"}, {"name": "GLM", "status": "timed out"}])
+        for text in ("测试未通过：1", "未运行测试：1", "审查者未完成：GLM"):
+            self.assertIn(text, page)
+        self.assertNotIn("无未解决问题", page)
+
+    def test_numbers_compare_by_value(self):
+        self.assertTrue(report.same(1, "1.0"))
+        self.assertFalse(report.same("0.5", 0.51))
+        self.assertTrue(report.same("ok", "ok"))
+        self.assertFalse(report.same(None, None))
+
+    def test_only_http_pr_links(self):
+        self.assertNotIn("javascript:", self.render(pr={"number": 1, "url": "javascript:alert(1)"}))
+        self.assertIn('href="https://github.com/a/b/pull/1"', self.render(pr={"number": 1, "url": "https://github.com/a/b/pull/1"}))

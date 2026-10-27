@@ -9,16 +9,16 @@ Adapted from "How the Claude Code team does code review" (article shared by Addy
 
 ## Permissions
 
-Running this skill is the user's permission to push the feature branch and open a **draft** PR (user, 2026-10-26). It does not cover pushing the base branch, force-pushing, marking the PR ready, merging, or posting review comments on GitHub. Findings stay in the local report.
+Running this skill is the user's permission to push the feature branch, open a **draft** PR and put a short summary in its description (user, 2026-10-26). It does not cover pushing the base branch, force-pushing, marking the PR ready, merging, or posting review comments on GitHub. Findings stay in the local report.
 
 ## 1. Rules and scope
 
 1. Read `REVIEW.md` at the repo root (template: `REVIEW.template.md` in this directory), then `AGENTS.md` / `CLAUDE.md`. REVIEW.md overrides the defaults below. Without one, use the defaults.
-2. Work on a feature branch, in a worktree when other sessions share the checkout (git-workflow `branches.md`). Base: `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`.
+2. Work on a feature branch, in a worktree when other sessions share the checkout (git-workflow `branches.md`). Base: `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`. Run `git fetch origin <base>` so that `origin/<base>` is what GitHub has.
 3. If the local base is ahead of `origin/<base>` (`git log --oneline origin/<base>..<base>`), the PR also carries those commits. Stop and ask: push the base first, or include them.
 4. The scope is `git diff origin/<base>...HEAD`, the diff the PR shows. Read all of it first.
 
-Keep every output in `DIR=~/.local/state/pr-review/<repo>/<branch>/`, outside the repo.
+Keep every output outside the repo: `DIR=~/.local/state/pr-review/<repo>/<branch>; mkdir -p "$DIR"`.
 
 ## 2. Risk tier
 
