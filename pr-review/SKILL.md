@@ -18,7 +18,7 @@ Running this skill is the user's permission to push the feature branch, open a *
 3. If the local base is ahead of `origin/<base>` (`git log --oneline origin/<base>..<base>`), the PR also carries those commits. Stop and ask: push the base first, or include them.
 4. The scope is `git diff origin/<base>...HEAD`, the diff the PR shows. Read all of it first.
 
-Keep every output outside the repo: `DIR=~/.local/state/pr-review/<repo>/<branch>; mkdir -p "$DIR"`.
+Keep every output outside the repo: `DIR=~/.local/state/pr-review/<repo>/<branch>; mkdir -p "$DIR"`. Shell variables do not survive between tool calls, so set `DIR` again in every command that uses it.
 
 ## 2. Risk tier
 

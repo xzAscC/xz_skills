@@ -17,6 +17,7 @@ import html
 import json
 import mimetypes
 import sys
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 LABELS = ("Important", "Nit", "Pre-existing")
@@ -79,18 +80,26 @@ def is_open(finding):
     return label(finding) == "Important" and (not resolution or resolution.startswith("open"))
 
 
+def status(item):
+    return str(item.get("status") or "").strip().lower()
+
+
 def same(before, after):
+    # Decimal compares exactly (no float rounding of large integers) and treats 1 and 1.0 as equal.
     if before is None or after is None:
         return False
+    a, b = str(before).strip(), str(after).strip()
     try:
-        return float(before) == float(after)
-    except (TypeError, ValueError):
-        return str(before) == str(after)
+        x, y = Decimal(a), Decimal(b)
+    except InvalidOperation:
+        return a == b
+    return x == y or (x.is_nan() and y.is_nan())
 
 
-def image(path):
-    if not path.is_file():
-        raise SystemExit(f"report.py: screenshot not found: {path}")
+def image(root, name):
+    path = root / str(name or "")
+    if not name or not path.is_file():
+        raise SystemExit(f"report.py: screenshot not found: {path if name else '(no path given)'}")
     mime = mimetypes.guess_type(path.name)[0] or "image/png"
     return f"data:{mime};base64,{base64.b64encode(path.read_bytes()).decode()}"
 
@@ -102,20 +111,22 @@ def table(head, rows):
 
 
 def render(data, root):
-    findings = sorted(data.get("findings", []), key=lambda f: LABELS.index(label(f)))
-    tests = data.get("tests", [])
-    statuses = [t.get("status") for t in tests]
+    findings = sorted(data.get("findings") or [], key=lambda f: LABELS.index(label(f)))
+    tests = data.get("tests") or []
+    statuses = [status(t) for t in tests]
     opened = sum(map(is_open, findings))
     counts = " / ".join(f"{name} {sum(label(f) == name for f in findings)}" for name in LABELS)
-    test_text = "，".join(f"{STATUS.get(s, s)} {statuses.count(s)}" for s in dict.fromkeys(statuses)) or "没有记录"
+    test_text = "，".join(f"{STATUS.get(s, s or '无状态')} {statuses.count(s)}"
+                         for s in dict.fromkeys(statuses)) or "没有记录"
     failed = sum(s not in ("pass", "not run") for s in statuses)
     not_run = statuses.count("not run")
     test_class = "bad" if failed else "warn" if not_run or not tests else "good"
-    unfinished = [str(r.get("name")) for r in data.get("reviewers", []) if r.get("status") != "done"]
+    unfinished = [str(r.get("name")) for r in data.get("reviewers") or [] if status(r) != "done"]
     # The verdict lists every reason not to merge yet, not only open findings.
     problems = ([(f"未解决 Important：{opened}", "bad")] if opened else []) \
         + ([(f"测试未通过：{failed}", "bad")] if failed else []) \
         + ([(f"未运行测试：{not_run}", "warn")] if not_run else []) \
+        + ([("没有测试记录", "warn")] if not tests else []) \
         + ([("审查者未完成：" + "、".join(unfinished), "warn")] if unfinished else [])
     verdict = "".join(f'<b class="{c}">{esc(t)}</b>' for t, c in problems) or '<b class="good">无未解决问题</b>'
 
@@ -157,8 +168,8 @@ def render(data, root):
                    '<p class="muted">叠放模式下点击图片在改动前后之间切换。</p>')
         for s in data["screens"]:
             out.append(f'<h3>{esc(s.get("name"))}</h3><div class="pair">'
-                       f'<figure><img src="{image(root / s["before"])}" alt="改动前"><figcaption>改动前（base）</figcaption></figure>'
-                       f'<figure><img src="{image(root / s["after"])}" alt="改动后"><figcaption>改动后（branch）</figcaption></figure>'
+                       f'<figure><img src="{image(root, s.get("before"))}" alt="改动前"><figcaption>改动前（base）</figcaption></figure>'
+                       f'<figure><img src="{image(root, s.get("after"))}" alt="改动后"><figcaption>改动后（branch）</figcaption></figure>'
                        "</div>")
 
     if data.get("numbers"):
@@ -172,8 +183,8 @@ def render(data, root):
     if tests:
         out.append(table(["命令", "结果", "说明"], [
             [f'<code>{esc(t.get("command"))}</code>',
-             f'<span class="{ {"pass": "good", "fail": "bad"}.get(t.get("status"), "warn") }">'
-             f'{esc(STATUS.get(t.get("status"), t.get("status")))}</span>',
+             f'<span class="{ {"pass": "good", "not run": "warn"}.get(status(t), "bad") }">'
+             f'{esc(STATUS.get(status(t), status(t) or "无状态"))}</span>',
              esc(t.get("reason")) + (f'<details><summary>输出</summary><pre>{esc(t["output"])}</pre></details>'
                                      if t.get("output") else "")]
             for t in tests]))

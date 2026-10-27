@@ -333,3 +333,33 @@ class ReportTests(unittest.TestCase):
     def test_only_http_pr_links(self):
         self.assertNotIn("javascript:", self.render(pr={"number": 1, "url": "javascript:alert(1)"}))
         self.assertIn('href="https://github.com/a/b/pull/1"', self.render(pr={"number": 1, "url": "https://github.com/a/b/pull/1"}))
+
+    def test_no_tests_is_not_a_clean_verdict(self):
+        page = self.render()
+        self.assertIn("没有测试记录", page)
+        self.assertNotIn("无未解决问题", page)
+
+    def test_null_lists_and_status_case(self):
+        page = self.render(findings=None, tests=[{"command": "a", "status": "Pass"}, {"command": "b"}],
+                           reviewers=[{"name": "GLM", "status": "Done"}])
+        self.assertIn("通过 1", page)
+        self.assertIn("无状态 1", page)
+        self.assertIn("测试未通过：1", page)
+        self.assertNotIn("审查者未完成", page)
+        self.assertNotIn("None", page)
+
+    def test_unknown_status_row_is_red(self):
+        page = self.render(tests=[{"command": "pytest", "status": "error"}])
+        self.assertEqual(page.count('class="bad">error'), 2)
+
+    def test_numbers_exact_and_nan(self):
+        self.assertTrue(report.same("nan", float("nan")))
+        self.assertFalse(report.same(2**53, 2**53 + 1))
+        self.assertFalse(report.same(True, 1))
+        self.assertTrue(report.same("1e3", 1000))
+
+    def test_screen_without_after_path_stops_cleanly(self):
+        with tempfile.TemporaryDirectory() as d:
+            Path(d, "a.png").write_bytes(b"\x89PNG")
+            with self.assertRaisesRegex(SystemExit, "no path given"):
+                report.render({"title": "t", "screens": [{"name": "home", "before": "a.png"}]}, Path(d))
