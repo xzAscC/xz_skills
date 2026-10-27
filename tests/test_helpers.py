@@ -452,3 +452,13 @@ class ReportTests(unittest.TestCase):
     def test_node_status_is_case_insensitive(self):
         svg = report.diagram({"columns": [{"title": "c", "nodes": [{"id": "a", "label": "a", "status": "New"}]}]})
         self.assertIn('class="n new"', svg)
+
+    def test_copies_and_blank_context_lines(self):
+        files = report.parse_diff("\n".join([
+            "diff --git a/a.py b/src_copy_longer_name.py", "similarity index 100%",
+            "copy from a.py", "copy to src_copy_longer_name.py",
+            "diff --git a/b.txt b/b.txt", "--- a/b.txt", "+++ b/b.txt", "@@ -1,3 +1,3 @@", " x", "", "-y", "+z", ""]))
+        self.assertEqual(files[0]["path"], "src_copy_longer_name.py")
+        self.assertEqual(files[0]["notes"], ["复制自 a.py"])
+        self.assertEqual(files[1]["rows"][1:], [("c", 1, 1, "x"), ("c", 2, 2, ""), ("d", 3, "", "y"), ("a", "", 3, "z")])
+        self.assertEqual(report.parse_diff(""), [])

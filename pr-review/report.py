@@ -39,7 +39,7 @@ STATUS = {"pass": "通过", "fail": "失败", "not run": "未运行"}
 NODES = {"new": "新增", "modified": "修改", "unchanged": "未改", "external": "外部"}
 HUNK = re.compile(r"@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@")
 NOTES = {"Binary files ": "二进制文件", "new file mode ": "新文件，权限 ", "deleted file mode ": "删除文件，权限 ",
-         "old mode ": "原权限 ", "new mode ": "新权限 ", "rename from ": "重命名自 "}
+         "old mode ": "原权限 ", "new mode ": "新权限 ", "rename from ": "重命名自 ", "copy from ": "复制自 "}
 
 CSS = """
 :root { color-scheme:light; --bg:#f7f7f8; --panel:#fff; --sunken:#f1f1f3; --line:#e4e4e8;
@@ -223,7 +223,10 @@ def git_path(raw, prefixed=True):
 def parse_diff(text):
     """Split a unified diff into files: path, +/- counts, header notes, rows (kind, old line, new line, text)."""
     files = []
-    for line in text.split("\n"):  # not splitlines(): \f or \x85 inside a line is content
+    lines = text.split("\n")  # not splitlines(): \f or \x85 inside a line is content
+    if lines[-1] == "":
+        lines.pop()  # only the final newline; an empty line inside a hunk is a blank context line
+    for line in lines:
         if line.startswith("diff --git "):
             rest = line[len("diff --git "):]
             quoted = re.search(r'"(?:[^"\\]|\\.)*"$', rest) if rest.endswith('"') else None
@@ -231,7 +234,7 @@ def parse_diff(text):
             path = git_path(quoted[0]) if quoted else git_path(rest[(len(rest) + 1) // 2:])
             files.append({"path": path, "add": 0, "del": 0, "rows": [], "notes": [], "hunk": False})
             continue
-        if not files or not line:
+        if not files:
             continue
         f = files[-1]
         m = HUNK.match(line)
@@ -242,8 +245,8 @@ def parse_diff(text):
             # File header: the +++ and rename lines name the new path; notes describe non-text changes.
             if line.startswith("+++ ") and line[4:] != "/dev/null":
                 f["path"] = git_path(line[4:].rstrip("\t"))
-            elif line.startswith("rename to "):
-                f["path"] = git_path(line[len("rename to "):], prefixed=False)
+            elif line.startswith(("rename to ", "copy to ")):
+                f["path"] = git_path(line.split(" to ", 1)[1], prefixed=False)
             for prefix, note in NOTES.items():
                 if line.startswith(prefix):
                     f["notes"].append(note if prefix == "Binary files " else note + line[len(prefix):])
